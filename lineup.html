@@ -443,19 +443,37 @@
 
 <div class="toast" id="toast">تم النسخ ✓</div>
 
-<script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  // بيانات مشروعك في Firebase — مشتركة بينك وبين أخوك
+  const firebaseConfig = {
+    apiKey: "AIzaSyBcxBeY7pjJ5iEHB45-wJh6Pre0qSnZdVI",
+    authDomain: "training-f7016.firebaseapp.com",
+    projectId: "training-f7016",
+    storageBucket: "training-f7016.firebasestorage.app",
+    messagingSenderId: "263642447317",
+    appId: "1:263642447317:web:664999b5955045eac2915c",
+    measurementId: "G-XH8BPJJHQ2"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const sharedRef = doc(db, 'lineup', 'shared');
+
   const MAX = 16;
   const POSITIONS = ['دفاع', 'وسط', 'جناح', 'انتظار'];
-  const TEAM_QUOTA = { 'دفاع': 3, 'وسط': 2, 'جناح': 3 };
   const TEAM_SIZE = 8;
-  const STORAGE_KEY = 'player-positions';
-  const SKILL_KEY = 'player-skills';
-  const NAMES_KEY = 'saved-names';
 
   let players = [];
   let selected = new Set();
   let positionMap = {}; // normalized name -> position
   let skillMap = {}; // normalized name -> skill (string "1".."10")
+
+  let docLoaded = false;
+  let resolveDocReady;
+  const docReadyPromise = new Promise(res => { resolveDocReady = res; });
 
   const arabicNums = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
   function toArabicNum(n){
@@ -469,17 +487,6 @@
     return v ? Number(v) : 5;
   }
 
-  function hasStorage(){
-    try{
-      const t = '__test__';
-      window.localStorage.setItem(t, '1');
-      window.localStorage.removeItem(t);
-      return true;
-    } catch(err){
-      return false;
-    }
-  }
-
   let storageWarned = false;
   function notifyStorageIssue(){
     if(storageWarned) return;
@@ -487,7 +494,7 @@
     const toast = document.getElementById('toast');
     if(!toast) return;
     const original = toast.textContent;
-    toast.textContent = 'تنبيه: الحفظ التلقائي غير متاح على هالمتصفح';
+    toast.textContent = 'تنبيه: تعذر الاتصال بقاعدة البيانات المشتركة الآن';
     toast.classList.add('show');
     setTimeout(() => {
       toast.classList.remove('show');
@@ -495,93 +502,120 @@
     }, 3200);
   }
 
-  async function loadPositions(){
-    if(hasStorage()){
-      try{
-        const raw = window.localStorage.getItem(STORAGE_KEY);
-        positionMap = raw ? JSON.parse(raw) : {};
-      } catch(err){
-        positionMap = {};
-      }
-    }
-    // ترحيل الأسماء القديمة للخانات: محور -> وسط، وسط -> جناح
+  // ترحيل الأسماء القديمة للخانات: محور -> وسط، وسط -> جناح
+  function migratePositions(map){
     let migrated = false;
-    for(const key in positionMap){
-      if(positionMap[key] === 'وسط'){ positionMap[key] = '__تمرحيل_جناح__'; migrated = true; }
+    for(const key in map){
+      if(map[key] === 'وسط'){ map[key] = '__تمرحيل_جناح__'; migrated = true; }
     }
-    for(const key in positionMap){
-      if(positionMap[key] === 'محور'){ positionMap[key] = 'وسط'; migrated = true; }
+    for(const key in map){
+      if(map[key] === 'محور'){ map[key] = 'وسط'; migrated = true; }
     }
-    for(const key in positionMap){
-      if(positionMap[key] === '__تمرحيل_جناح__'){ positionMap[key] = 'جناح'; }
+    for(const key in map){
+      if(map[key] === '__تمرحيل_جناح__'){ map[key] = 'جناح'; }
     }
-    if(migrated) savePositions();
+    return migrated;
   }
 
-  async function savePositions(){
-    if(!hasStorage()){ notifyStorageIssue(); return; }
+  function selectedNames(){
+    return [...selected].map(i => players[i]).filter(Boolean);
+  }
+
+  function applySelectedFromNames(namesArr){
+    const idxMap = new Map(players.map((p, i) => [normalize(p), i]));
+    const newSelected = new Set();
+    (namesArr || []).forEach(n => {
+      const idx = idxMap.get(normalize(n));
+      if(idx !== undefined) newSelected.add(idx);
+    });
+    selected = newSelected;
+  }
+
+  async function persist(partial){
     try{
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(positionMap));
+      await setDoc(sharedRef, partial, { merge: true });
     } catch(err){
       notifyStorageIssue();
     }
   }
 
-  async function loadSkills(){
-    if(!hasStorage()) return;
-    try{
-      const raw = window.localStorage.getItem(SKILL_KEY);
-      skillMap = raw ? JSON.parse(raw) : {};
-    } catch(err){
-      skillMap = {};
-    }
-  }
-
-  async function saveSkills(){
-    if(!hasStorage()){ notifyStorageIssue(); return; }
-    try{
-      window.localStorage.setItem(SKILL_KEY, JSON.stringify(skillMap));
-    } catch(err){
-      notifyStorageIssue();
-    }
-  }
-
-  async function saveNames(text){
-    if(!hasStorage()){ notifyStorageIssue(); return; }
-    try{
-      window.localStorage.setItem(NAMES_KEY, text);
-    } catch(err){
-      notifyStorageIssue();
-    }
-  }
-
-  async function loadSavedNames(){
-    if(!hasStorage()) return;
-    const textarea = document.getElementById('namesInput');
-    try{
-      const raw = window.localStorage.getItem(NAMES_KEY);
-      if(raw){
-        textarea.value = raw;
+  // يحدّث أزرار الخانة وقائمة المهارة داخل الصفوف الموجودة بدون إعادة بنائها
+  // (عشان ما نفقد نفس عنصر DOM ومستمعي الأحداث)
+  function syncRowControls(){
+    document.querySelectorAll('.row').forEach(row => {
+      const i = Number(row.dataset.index);
+      const name = players[i];
+      if(name === undefined) return;
+      const key = normalize(name);
+      row.querySelectorAll('.pos-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.pos === positionMap[key]);
+      });
+      const sel = row.querySelector('.skill-select');
+      if(sel){
+        const skillVal = skillMap[key] || '';
+        if(sel.value !== skillVal) sel.value = skillVal;
       }
-    } catch(err){
-      // لا توجد قائمة محفوظة بعد
-    }
+    });
   }
 
-  window.addEventListener('DOMContentLoaded', loadSavedNames);
+  let lastRemoteSelected = [];
+
+  onSnapshot(sharedRef, (snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    const remoteNames = data.names || '';
+    positionMap = { ...(data.positions || {}) };
+    skillMap = { ...(data.skills || {}) };
+    lastRemoteSelected = data.selected || [];
+
+    if(migratePositions(positionMap)){
+      persist({ positions: positionMap });
+    }
+
+    const textarea = document.getElementById('namesInput');
+    if(textarea && document.activeElement !== textarea && textarea.value !== remoteNames){
+      textarea.value = remoteNames;
+    }
+
+    if(players.length > 0){
+      applySelectedFromNames(lastRemoteSelected);
+      renderRows();
+      syncRowControls();
+      updateScoreboard();
+      updateResult();
+    }
+
+    if(!docLoaded){
+      docLoaded = true;
+      resolveDocReady();
+    }
+  }, (err) => {
+    notifyStorageIssue();
+    if(!docLoaded){
+      docLoaded = true;
+      resolveDocReady();
+    }
+  });
+
+  function waitForDoc(){
+    return Promise.race([
+      docReadyPromise,
+      new Promise(res => setTimeout(res, 4000))
+    ]);
+  }
 
   async function generateList(){
     const raw = document.getElementById('namesInput').value;
     players = raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
     selected.clear();
-    saveNames(raw);
+    persist({ names: raw });
 
     const container = document.getElementById('rowsContainer');
-    container.innerHTML = '<div class="empty">تحميل البيانات المحفوظة...</div>';
+    container.innerHTML = '<div class="empty">تحميل البيانات المشتركة...</div>';
     document.getElementById('listSection').style.display = 'block';
     document.getElementById('resultSection').style.display = 'none';
 
-    await Promise.all([loadPositions(), loadSkills()]);
+    await waitForDoc();
+    applySelectedFromNames(lastRemoteSelected);
 
     container.innerHTML = '';
 
@@ -640,6 +674,10 @@
       });
     }
 
+    // طبّق الاختيار المشترك الحالي بعد ما الصفوف صارت جاهزة
+    renderRows();
+    syncRowControls();
+
     updateScoreboard();
     updateResult();
     document.getElementById('listSection').scrollIntoView({behavior:'smooth', block:'start'});
@@ -655,14 +693,14 @@
       b.classList.toggle('active', b.dataset.pos === positionMap[key]);
     });
 
-    savePositions();
+    persist({ positions: positionMap });
     updateResult();
   }
 
   function setSkill(name, value){
     const key = normalize(name);
     if(value === ''){ delete skillMap[key]; } else { skillMap[key] = value; }
-    saveSkills();
+    persist({ skills: skillMap });
     updateResult();
   }
 
@@ -673,6 +711,7 @@
     renderRows();
     updateScoreboard();
     updateResult();
+    persist({ selected: selectedNames() });
   }
 
   function renderRows(){
@@ -815,6 +854,7 @@
     renderRows();
     updateScoreboard();
     updateResult();
+    persist({ selected: [] });
     document.getElementById('listSection').scrollIntoView({behavior:'smooth', block:'start'});
   }
 
@@ -823,6 +863,10 @@
     div.textContent = str;
     return div.innerHTML;
   }
+
+  window.generateList = generateList;
+  window.copyList = copyList;
+  window.resetAll = resetAll;
 </script>
 </body>
 </html>
