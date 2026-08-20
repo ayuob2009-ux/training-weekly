@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تشكيلة الأسبوع</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pitch: #1f5c3f;
+    --pitch-dark: #16432e;
+    --chalk: #f4f2e9;
+    --chalk-dim: #cfd9cf;
+    --gold: #d9a441;
+    --red-card: #c1443b;
+    --line: rgba(244,242,233,0.18);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    position:relative;
+    background:
+      radial-gradient(ellipse 700px 500px at -5% -10%, rgba(244,242,233,0.16), transparent 55%),
+      radial-gradient(ellipse 700px 500px at 105% -10%, rgba(217,164,65,0.14), transparent 55%),
+      radial-gradient(ellipse 900px 700px at 50% 110%, rgba(0,0,0,0.35), transparent 60%),
+      repeating-linear-gradient(65deg, var(--pitch) 0px, var(--pitch) 70px, var(--pitch-dark) 70px, var(--pitch-dark) 140px);
+    font-family:'Tajawal', sans-serif;
+    color: var(--chalk);
+    padding: 24px 16px 60px;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background-repeat: no-repeat, no-repeat;
+    background-image:
+      radial-gradient(circle, transparent 0 118px, rgba(244,242,233,0.14) 118px 121px, transparent 121px),
+      linear-gradient(rgba(244,242,233,0.14), rgba(244,242,233,0.14));
+    background-size: 240px 240px, 2px 640px;
+    background-position: 50% 42%, 50% 42%;
+    opacity:0.55;
+    z-index:0;
+  }
+  body::after{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    box-shadow: inset 0 0 160px rgba(0,0,0,0.55);
+    z-index:0;
+  }
+  .wrap{max-width:640px; margin:0 auto; position:relative; z-index:1;}
+
+  header{
+    text-align:center;
+    margin-bottom:22px;
+  }
+  .eyebrow{
+    font-family:'Cairo', sans-serif;
+    font-size:13px;
+    letter-spacing:2px;
+    color: var(--gold);
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  h1{
+    font-family:'Cairo', sans-serif;
+    font-weight:900;
+    font-size: clamp(28px, 6vw, 40px);
+    margin:0;
+    line-height:1.15;
+  }
+  .sub{
+    color: var(--chalk-dim);
+    font-size:14px;
+    margin-top:8px;
+  }
+
+  .scoreboard{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    margin: 18px auto 24px;
+    background: var(--pitch-dark);
+    border: 1px solid var(--line);
+    border-radius:14px;
+    padding:10px 18px;
+    width:fit-content;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  }
+  .scoreboard .count{
+    font-family:'Cairo', sans-serif;
+    font-weight:900;
+    font-size:30px;
+    color: var(--chalk);
+    min-width:64px;
+    text-align:center;
+    letter-spacing:1px;
+  }
+  .scoreboard .of{
+    color: var(--chalk-dim);
+    font-size:13px;
+  }
+  .scoreboard.full .count{ color: var(--gold); }
+
+  .card{
+    background: rgba(22,67,46,0.55);
+    border: 1px solid var(--line);
+    border-radius:16px;
+    padding:18px;
+    margin-bottom:18px;
+    backdrop-filter: blur(2px);
+  }
+  .card h2{
+    font-family:'Cairo', sans-serif;
+    font-size:16px;
+    margin:0 0 10px;
+    color: var(--gold);
+  }
+  textarea{
+    width:100%;
+    min-height:120px;
+    resize:vertical;
+    background: rgba(244,242,233,0.06);
+    border: 1px solid var(--line);
+    border-radius:10px;
+    color: var(--chalk);
+    font-family:'Tajawal', sans-serif;
+    font-size:15px;
+    padding:12px;
+    line-height:1.8;
+  }
+  textarea::placeholder{ color: rgba(244,242,233,0.4); }
+  textarea:focus, button:focus-visible, .row-main:focus-visible{
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  .hint{
+    font-size:12.5px;
+    color: var(--chalk-dim);
+    margin-top:8px;
+  }
+
+  button.primary{
+    margin-top:12px;
+    background: var(--gold);
+    color: var(--pitch-dark);
+    border:none;
+    font-family:'Cairo', sans-serif;
+    font-weight:700;
+    font-size:15px;
+    padding:11px 20px;
+    border-radius:10px;
+    cursor:pointer;
+    transition: transform .1s ease, filter .15s ease;
+  }
+  button.primary:hover{ filter:brightness(1.08); }
+  button.primary:active{ transform: scale(0.98); }
+
+  #listSection{ display:none; }
+
+  .row{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:8px 12px;
+    padding:10px 8px;
+    border-radius:10px;
+    border-bottom:1px solid var(--line);
+    user-select:none;
+  }
+  .row:last-child{ border-bottom:none; }
+  .row:hover{ background: rgba(244,242,233,0.05); }
+  .row.selected{ background: rgba(217,164,65,0.12); }
+  .row.disabled .row-main{ opacity:0.35; cursor:not-allowed; }
+
+  .row-main{
+    display:flex; align-items:center; gap:12px;
+    cursor:pointer;
+    flex:1 1 140px;
+    min-width:140px;
+  }
+
+  .row-controls{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+    flex:none;
+    margin-right:auto;
+  }
+
+  .positions{
+    display:flex;
+    gap:6px;
+    flex:none;
+  }
+  .pos-btn{
+    font-family:'Cairo', sans-serif;
+    font-size:12px;
+    font-weight:700;
+    border:1px solid var(--chalk-dim);
+    background: transparent;
+    color: var(--chalk-dim);
+    padding:5px 10px;
+    border-radius:999px;
+    cursor:pointer;
+    transition: all .15s ease;
+  }
+  .pos-btn:hover{ border-color: var(--chalk); color: var(--chalk); }
+  .pos-btn.active{
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--pitch-dark);
+  }
+  .pos-btn[data-pos="انتظار"].active{
+    background: var(--chalk-dim);
+    border-color: var(--chalk-dim);
+    color: var(--pitch-dark);
+  }
+  .pos-btn[data-pos="انتظار"]{
+    border-style: dashed;
+  }
+
+  .skill-select{
+    font-family:'Cairo', sans-serif;
+    font-size:12px;
+    font-weight:700;
+    border:1px solid var(--chalk-dim);
+    background: rgba(244,242,233,0.06);
+    color: var(--chalk);
+    padding:5px 6px;
+    border-radius:8px;
+    cursor:pointer;
+    flex:none;
+    width:52px;
+  }
+  .skill-select:hover{ border-color: var(--chalk); }
+
+  .checkbox{
+    width:22px; height:22px;
+    border-radius:6px;
+    border:2px solid var(--chalk-dim);
+    flex:none;
+    display:flex; align-items:center; justify-content:center;
+    transition: all .15s ease;
+  }
+  .row.selected .checkbox{
+    background: var(--gold);
+    border-color: var(--gold);
+  }
+  .checkbox svg{ display:none; width:14px; height:14px; }
+  .row.selected .checkbox svg{ display:block; }
+
+  .name{ flex:1; font-size:15.5px; }
+  .badge{
+    font-family:'Cairo', sans-serif;
+    font-weight:900;
+    font-size:13px;
+    color: var(--pitch-dark);
+    background: var(--chalk-dim);
+    min-width:26px;
+    height:26px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .row.selected .badge{ background: var(--gold); }
+
+  #resultSection{ display:none; }
+
+  .team-block{ margin-bottom:20px; }
+  .team-block:last-of-type{ margin-bottom:0; }
+  .team-header{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:8px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--line);
+  }
+  .team-header h3{
+    font-family:'Cairo', sans-serif;
+    font-size:15px;
+    margin:0;
+    color: var(--gold);
+  }
+  .team-header .avg{
+    font-size:12px;
+    color: var(--chalk-dim);
+  }
+
+  .final-list{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .final-item{
+    display:flex; align-items:center; gap:10px;
+    font-size:15px;
+    padding:6px 0;
+  }
+  .final-item .num{
+    font-family:'Cairo', sans-serif;
+    font-weight:900;
+    color: var(--gold);
+    min-width:22px;
+  }
+  .final-item .name-txt{ flex:1; }
+  .final-item .pos-tag{
+    font-size:11.5px;
+    color: var(--pitch-dark);
+    background: var(--chalk-dim);
+    padding:2px 8px;
+    border-radius:999px;
+    font-family:'Cairo', sans-serif;
+    font-weight:700;
+  }
+  .final-item .skill-tag{
+    font-size:11.5px;
+    color: var(--gold);
+    border:1px solid var(--gold);
+    padding:1px 7px;
+    border-radius:999px;
+    font-family:'Cairo', sans-serif;
+    font-weight:700;
+    min-width:22px;
+    text-align:center;
+  }
+
+  .waiting-list{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    margin-top:14px;
+    padding-top:14px;
+    border-top:1px dashed var(--line);
+  }
+  .waiting-title{
+    font-family:'Cairo', sans-serif;
+    font-size:13px;
+    font-weight:700;
+    color: var(--chalk-dim);
+    margin-bottom:8px;
+  }
+
+  .actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+  button.secondary{
+    background: transparent;
+    border:1px solid var(--chalk-dim);
+    color: var(--chalk);
+    font-family:'Tajawal', sans-serif;
+    font-size:14px;
+    padding:9px 16px;
+    border-radius:10px;
+    cursor:pointer;
+  }
+  button.secondary:hover{ background: rgba(244,242,233,0.08); }
+
+  .toast{
+    position:fixed;
+    bottom:22px; left:50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--chalk);
+    color: var(--pitch-dark);
+    font-family:'Cairo', sans-serif;
+    font-weight:700;
+    font-size:14px;
+    padding:10px 18px;
+    border-radius:10px;
+    opacity:0;
+    pointer-events:none;
+    transition: all .25s ease;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
+
+  .empty{
+    text-align:center;
+    color: var(--chalk-dim);
+    font-size:14px;
+    padding:20px 0;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">تمرين كل اثنين</div>
+    <h1>تشكيلة الأسبوع</h1>
+    <div class="sub">الصق أسماء الشباب، حدد الخانة والمهارة، وعلّم على ١٦ لاعب لهالأسبوع</div>
+  </header>
+
+  <div class="card">
+    <h2>١. قائمة الأسماء</h2>
+    <textarea id="namesInput" placeholder="الصق الأسماء هنا، كل اسم في سطر مستقل&#10;مثال:&#10;محمد العتيبي&#10;فهد الدوسري&#10;سلطان القحطاني"></textarea>
+    <div class="hint">كل اسم في سطر لحاله. القائمة والخانة والمهارة تنحفظ عندك تلقائيًا، فأول مرة تدخلها تلقى كل شي جاهز.</div>
+    <button class="primary" onclick="generateList()">عرض القائمة</button>
+  </div>
+
+  <div class="card" id="listSection">
+    <h2>٢. اضغط على اللاعب للاختيار، وحدد خانته ومهارته</h2>
+    <div class="scoreboard" id="scoreboard">
+      <span class="count" id="countDisplay">٠</span>
+      <span class="of">من ١٦</span>
+    </div>
+    <div id="rowsContainer"></div>
+  </div>
+
+  <div class="card" id="resultSection">
+    <h2>التشكيلة النهائية</h2>
+
+    <div class="team-block">
+      <div class="team-header">
+        <h3>الفريق الأول</h3>
+        <span class="avg" id="avgA"></span>
+      </div>
+      <div class="final-list" id="finalListA"></div>
+    </div>
+
+    <div class="team-block">
+      <div class="team-header">
+        <h3>الفريق الثاني</h3>
+        <span class="avg" id="avgB"></span>
+      </div>
+      <div class="final-list" id="finalListB"></div>
+    </div>
+
+    <div class="waiting-list" id="waitingList" style="display:none">
+      <div class="waiting-title">قائمة الانتظار</div>
+      <div id="waitingItems"></div>
+    </div>
+    <div class="actions">
+      <button class="secondary" onclick="copyList()">نسخ القائمة</button>
+      <button class="secondary" onclick="resetAll()">تصفير الاختيار</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">تم النسخ ✓</div>
+
+<script>
+  const MAX = 16;
+  const POSITIONS = ['دفاع', 'وسط', 'جناح', 'انتظار'];
+  const TEAM_QUOTA = { 'دفاع': 3, 'وسط': 2, 'جناح': 3 };
+  const TEAM_SIZE = 8;
+  const STORAGE_KEY = 'player-positions';
+  const SKILL_KEY = 'player-skills';
+  const NAMES_KEY = 'saved-names';
+
+  let players = [];
+  let selected = new Set();
+  let positionMap = {}; // normalized name -> position
+  let skillMap = {}; // normalized name -> skill (string "1".."10")
+
+  const arabicNums = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+  function toArabicNum(n){
+    return String(n).split('').map(d => arabicNums[d] ?? d).join('');
+  }
+  function normalize(name){
+    return name.trim();
+  }
+  function getSkill(name){
+    const v = skillMap[normalize(name)];
+    return v ? Number(v) : 5;
+  }
+
+  function hasStorage(){
+    try{
+      const t = '__test__';
+      window.localStorage.setItem(t, '1');
+      window.localStorage.removeItem(t);
+      return true;
+    } catch(err){
+      return false;
+    }
+  }
+
+  let storageWarned = false;
+  function notifyStorageIssue(){
+    if(storageWarned) return;
+    storageWarned = true;
+    const toast = document.getElementById('toast');
+    if(!toast) return;
+    const original = toast.textContent;
+    toast.textContent = 'تنبيه: الحفظ التلقائي غير متاح على هالمتصفح';
+    toast.classList.add('show');
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => { toast.textContent = original; }, 300);
+    }, 3200);
+  }
+
+  async function loadPositions(){
+    if(hasStorage()){
+      try{
+        const raw = window.localStorage.getItem(STORAGE_KEY);
+        positionMap = raw ? JSON.parse(raw) : {};
+      } catch(err){
+        positionMap = {};
+      }
+    }
+    // ترحيل الأسماء القديمة للخانات: محور -> وسط، وسط -> جناح
+    let migrated = false;
+    for(const key in positionMap){
+      if(positionMap[key] === 'وسط'){ positionMap[key] = '__تمرحيل_جناح__'; migrated = true; }
+    }
+    for(const key in positionMap){
+      if(positionMap[key] === 'محور'){ positionMap[key] = 'وسط'; migrated = true; }
+    }
+    for(const key in positionMap){
+      if(positionMap[key] === '__تمرحيل_جناح__'){ positionMap[key] = 'جناح'; }
+    }
+    if(migrated) savePositions();
+  }
+
+  async function savePositions(){
+    if(!hasStorage()){ notifyStorageIssue(); return; }
+    try{
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(positionMap));
+    } catch(err){
+      notifyStorageIssue();
+    }
+  }
+
+  async function loadSkills(){
+    if(!hasStorage()) return;
+    try{
+      const raw = window.localStorage.getItem(SKILL_KEY);
+      skillMap = raw ? JSON.parse(raw) : {};
+    } catch(err){
+      skillMap = {};
+    }
+  }
+
+  async function saveSkills(){
+    if(!hasStorage()){ notifyStorageIssue(); return; }
+    try{
+      window.localStorage.setItem(SKILL_KEY, JSON.stringify(skillMap));
+    } catch(err){
+      notifyStorageIssue();
+    }
+  }
+
+  async function saveNames(text){
+    if(!hasStorage()){ notifyStorageIssue(); return; }
+    try{
+      window.localStorage.setItem(NAMES_KEY, text);
+    } catch(err){
+      notifyStorageIssue();
+    }
+  }
+
+  async function loadSavedNames(){
+    if(!hasStorage()) return;
+    const textarea = document.getElementById('namesInput');
+    try{
+      const raw = window.localStorage.getItem(NAMES_KEY);
+      if(raw){
+        textarea.value = raw;
+      }
+    } catch(err){
+      // لا توجد قائمة محفوظة بعد
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', loadSavedNames);
+
+  async function generateList(){
+    const raw = document.getElementById('namesInput').value;
+    players = raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+    selected.clear();
+    saveNames(raw);
+
+    const container = document.getElementById('rowsContainer');
+    container.innerHTML = '<div class="empty">تحميل البيانات المحفوظة...</div>';
+    document.getElementById('listSection').style.display = 'block';
+    document.getElementById('resultSection').style.display = 'none';
+
+    await Promise.all([loadPositions(), loadSkills()]);
+
+    container.innerHTML = '';
+
+    if(players.length === 0){
+      container.innerHTML = '<div class="empty">مافيه أسماء. الصق الأسماء فوق أول.</div>';
+    } else {
+      players.forEach((name, i) => {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.dataset.index = i;
+
+        const posBtns = POSITIONS.map(p => {
+          const isActive = positionMap[normalize(name)] === p;
+          return `<button type="button" class="pos-btn${isActive ? ' active' : ''}" data-pos="${p}">${p}</button>`;
+        }).join('');
+
+        const currentSkill = skillMap[normalize(name)] || '';
+        const skillOptions = ['<option value="">م-</option>']
+          .concat([1,2,3,4,5,6,7,8,9,10].map(n =>
+            `<option value="${n}"${String(n) === currentSkill ? ' selected' : ''}>${n}</option>`
+          )).join('');
+
+        row.innerHTML = `
+          <div class="row-main" role="checkbox" aria-checked="false" tabindex="0">
+            <div class="checkbox">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#16432e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="name">${escapeHtml(name)}</div>
+            <div class="badge" style="display:none"></div>
+          </div>
+          <div class="row-controls">
+            <div class="positions">${posBtns}</div>
+            <select class="skill-select" aria-label="مهارة ${escapeHtml(name)}">${skillOptions}</select>
+          </div>
+        `;
+
+        const rowMain = row.querySelector('.row-main');
+        rowMain.addEventListener('click', () => toggle(i));
+        rowMain.addEventListener('keydown', (e) => {
+          if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggle(i); }
+        });
+
+        row.querySelectorAll('.pos-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setPosition(name, btn.dataset.pos, row);
+          });
+        });
+
+        row.querySelector('.skill-select').addEventListener('click', (e) => e.stopPropagation());
+        row.querySelector('.skill-select').addEventListener('change', (e) => {
+          setSkill(name, e.target.value);
+        });
+
+        container.appendChild(row);
+      });
+    }
+
+    updateScoreboard();
+    updateResult();
+    document.getElementById('listSection').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  function setPosition(name, pos, row){
+    const key = normalize(name);
+    const current = positionMap[key];
+    positionMap[key] = (current === pos) ? undefined : pos;
+    if(positionMap[key] === undefined) delete positionMap[key];
+
+    row.querySelectorAll('.pos-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.pos === positionMap[key]);
+    });
+
+    savePositions();
+    updateResult();
+  }
+
+  function setSkill(name, value){
+    const key = normalize(name);
+    if(value === ''){ delete skillMap[key]; } else { skillMap[key] = value; }
+    saveSkills();
+    updateResult();
+  }
+
+  function toggle(i){
+    const isSelected = selected.has(i);
+    if(!isSelected && selected.size >= MAX) return;
+    if(isSelected){ selected.delete(i); } else { selected.add(i); }
+    renderRows();
+    updateScoreboard();
+    updateResult();
+  }
+
+  function renderRows(){
+    const rows = document.querySelectorAll('.row');
+    rows.forEach(row => {
+      const i = Number(row.dataset.index);
+      const isSelected = selected.has(i);
+      const rowMain = row.querySelector('.row-main');
+      row.classList.toggle('selected', isSelected);
+      rowMain.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+      const disabled = !isSelected && selected.size >= MAX;
+      row.classList.toggle('disabled', disabled);
+      const badge = row.querySelector('.badge');
+      if(isSelected){
+        const order = [...selected].indexOf(i) + 1;
+        badge.style.display = 'flex';
+        badge.textContent = toArabicNum(order);
+      } else {
+        badge.style.display = 'none';
+      }
+    });
+  }
+
+  function updateScoreboard(){
+    const board = document.getElementById('scoreboard');
+    document.getElementById('countDisplay').textContent = toArabicNum(selected.size);
+    board.classList.toggle('full', selected.size === MAX);
+  }
+
+  // يوزع اللاعبين على فريقين بالتناوب (سنيك درافت) حسب المهارة، ويحافظ قدر
+  // الإمكان على ٣ دفاع + ٢ وسط + ٣ جناح بكل فريق
+  function buildTeams(){
+    const groups = { 'دفاع': [], 'وسط': [], 'جناح': [], other: [] };
+    [...selected].forEach(i => {
+      const pos = positionMap[normalize(players[i])];
+      if(pos === 'دفاع' || pos === 'وسط' || pos === 'جناح'){ groups[pos].push(i); }
+      else { groups.other.push(i); }
+    });
+    ['دفاع', 'وسط', 'جناح', 'other'].forEach(k => {
+      groups[k].sort((a, b) => getSkill(players[b]) - getSkill(players[a]));
+    });
+
+    let teamA = [], teamB = [];
+    function assignList(list){
+      list.forEach((i, idx) => {
+        const cyclePos = idx % 4;
+        let preferred = (cyclePos === 0 || cyclePos === 3) ? 'A' : 'B';
+        if(preferred === 'A' && teamA.length >= TEAM_SIZE) preferred = 'B';
+        if(preferred === 'B' && teamB.length >= TEAM_SIZE) preferred = 'A';
+        if(preferred === 'A'){ teamA.push(i); } else { teamB.push(i); }
+      });
+    }
+    assignList(groups['دفاع']);
+    assignList(groups['وسط']);
+    assignList(groups['جناح']);
+    assignList(groups.other);
+
+    return { teamA, teamB };
+  }
+
+  function waitingPlayers(){
+    return players
+      .map((name, i) => ({ i, name }))
+      .filter(p => positionMap[normalize(p.name)] === 'انتظار');
+  }
+
+  function renderTeamList(el, list){
+    el.innerHTML = list.map((i, idx) => {
+      const pos = positionMap[normalize(players[i])];
+      const posTag = pos ? `<span class="pos-tag">${pos}</span>` : '';
+      const skillVal = skillMap[normalize(players[i])];
+      const skillTag = skillVal ? `<span class="skill-tag">${toArabicNum(skillVal)}</span>` : '';
+      return `
+      <div class="final-item">
+        <span class="num">${toArabicNum(idx+1)}</span>
+        <span class="name-txt">${escapeHtml(players[i])}</span>
+        ${posTag}
+        ${skillTag}
+      </div>
+    `;
+    }).join('');
+  }
+
+  function updateResult(){
+    const resultSection = document.getElementById('resultSection');
+    const waitingList = document.getElementById('waitingList');
+    const waitingItems = document.getElementById('waitingItems');
+    const waiting = waitingPlayers();
+
+    if(selected.size === 0 && waiting.length === 0){
+      resultSection.style.display = 'none';
+      return;
+    }
+    resultSection.style.display = 'block';
+
+    const { teamA, teamB } = buildTeams();
+    renderTeamList(document.getElementById('finalListA'), teamA);
+    renderTeamList(document.getElementById('finalListB'), teamB);
+
+    document.getElementById('avgA').textContent = teamA.length
+      ? 'متوسط المهارة ' + toArabicNum((teamA.reduce((s,i)=>s+getSkill(players[i]),0)/teamA.length).toFixed(1))
+      : '';
+    document.getElementById('avgB').textContent = teamB.length
+      ? 'متوسط المهارة ' + toArabicNum((teamB.reduce((s,i)=>s+getSkill(players[i]),0)/teamB.length).toFixed(1))
+      : '';
+
+    if(waiting.length > 0){
+      waitingList.style.display = 'block';
+      waitingItems.innerHTML = waiting.map((p, idx) => `
+        <div class="final-item">
+          <span class="num">${toArabicNum(idx+1)}</span>
+          <span class="name-txt">${escapeHtml(p.name)}</span>
+        </div>
+      `).join('');
+    } else {
+      waitingList.style.display = 'none';
+    }
+  }
+
+  function copyList(){
+    const { teamA, teamB } = buildTeams();
+    const waiting = waitingPlayers();
+
+    let text = 'الفريق الأول:\n' + teamA.map(i => players[i]).join('\n');
+    text += '\n\nالفريق الثاني:\n' + teamB.map(i => players[i]).join('\n');
+    if(waiting.length > 0){
+      text += '\n\nقائمة الانتظار:\n' + waiting.map(p => p.name).join('\n');
+    }
+
+    navigator.clipboard.writeText(text).then(() => {
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1600);
+    });
+  }
+
+  function resetAll(){
+    // قائمة الأسماء تظل محفوظة، بس نصفّر اختيار هالأسبوع
+    selected.clear();
+    renderRows();
+    updateScoreboard();
+    updateResult();
+    document.getElementById('listSection').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+</script>
+</body>
+</html>
