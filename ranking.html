@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الترتيب</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pitch: #1f5c3f;
+    --pitch-dark: #16432e;
+    --chalk: #f4f2e9;
+    --chalk-dim: #cfd9cf;
+    --gold: #d9a441;
+    --red-card: #c1443b;
+    --line: rgba(244,242,233,0.18);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    position:relative;
+    background:
+      radial-gradient(ellipse 700px 500px at -5% -10%, rgba(244,242,233,0.16), transparent 55%),
+      radial-gradient(ellipse 700px 500px at 105% -10%, rgba(217,164,65,0.14), transparent 55%),
+      radial-gradient(ellipse 900px 700px at 50% 110%, rgba(0,0,0,0.35), transparent 60%),
+      repeating-linear-gradient(65deg, var(--pitch) 0px, var(--pitch) 70px, var(--pitch-dark) 70px, var(--pitch-dark) 140px);
+    font-family:'Tajawal', sans-serif;
+    color: var(--chalk);
+    padding: 24px 16px 60px;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background-repeat: no-repeat, no-repeat;
+    background-image:
+      radial-gradient(circle, transparent 0 118px, rgba(244,242,233,0.14) 118px 121px, transparent 121px),
+      linear-gradient(rgba(244,242,233,0.14), rgba(244,242,233,0.14));
+    background-size: 240px 240px, 2px 640px;
+    background-position: 50% 42%, 50% 42%;
+    opacity:0.55;
+    z-index:0;
+  }
+  body::after{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    box-shadow: inset 0 0 160px rgba(0,0,0,0.55);
+    z-index:0;
+  }
+  .wrap{max-width:640px; margin:0 auto; position:relative; z-index:1;}
+
+  .top-nav{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    margin-bottom:18px;
+  }
+  .top-nav a{
+    font-family:'Cairo', sans-serif;
+    font-size:13px;
+    font-weight:700;
+    text-decoration:none;
+    color: var(--chalk-dim);
+    background: rgba(22,67,46,0.55);
+    border: 1px solid var(--line);
+    padding:8px 18px;
+    border-radius:999px;
+    transition: all .15s ease;
+  }
+  .top-nav a:hover{ color: var(--chalk); border-color: var(--chalk-dim); }
+  .top-nav a.active{
+    color: var(--pitch-dark);
+    background: var(--gold);
+    border-color: var(--gold);
+  }
+
+  header{
+    text-align:center;
+    margin-bottom:22px;
+  }
+  .eyebrow{
+    font-family:'Cairo', sans-serif;
+    font-size:13px;
+    letter-spacing:2px;
+    color: var(--gold);
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  h1{
+    font-family:'Cairo', sans-serif;
+    font-weight:900;
+    font-size: clamp(28px, 6vw, 40px);
+    margin:0;
+    line-height:1.15;
+  }
+  .sub{
+    color: var(--chalk-dim);
+    font-size:14px;
+    margin-top:8px;
+  }
+
+  .card{
+    background: rgba(22,67,46,0.55);
+    border: 1px solid var(--line);
+    border-radius:16px;
+    padding:18px;
+    margin-bottom:18px;
+    backdrop-filter: blur(2px);
+  }
+  .card h2{
+    font-family:'Cairo', sans-serif;
+    font-size:16px;
+    margin:0 0 14px;
+    color: var(--gold);
+  }
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+  }
+  thead th{
+    font-family:'Cairo', sans-serif;
+    font-size:12.5px;
+    font-weight:700;
+    color: var(--chalk-dim);
+    text-align:right;
+    padding:0 8px 10px;
+    border-bottom:1px solid var(--line);
+  }
+  thead th.center{ text-align:center; }
+  tbody td{
+    padding:10px 8px;
+    border-bottom:1px solid var(--line);
+    font-size:15px;
+    vertical-align:middle;
+  }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:nth-child(1) .rank-badge{ background: var(--gold); color: var(--pitch-dark); }
+  tbody tr:nth-child(2) .rank-badge{ background: #d7dce0; color: var(--pitch-dark); }
+  tbody tr:nth-child(3) .rank-badge{ background: #cd8a4f; color: var(--pitch-dark); }
+
+  .rank-badge{
+    font-family:'Cairo', sans-serif;
+    font-weight:900;
+    font-size:13px;
+    color: var(--chalk-dim);
+    background: rgba(244,242,233,0.08);
+    min-width:26px;
+    height:26px;
+    border-radius:50%;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .player-name{ font-size:15px; }
+  td.center{ text-align:center; }
+
+  .stat-input{
+    width:52px;
+    text-align:center;
+    font-family:'Cairo', sans-serif;
+    font-weight:700;
+    font-size:14px;
+    background: rgba(244,242,233,0.06);
+    border: 1px solid var(--line);
+    border-radius:8px;
+    color: var(--chalk);
+    padding:5px 4px;
+  }
+  .stat-input:focus{
+    outline: 2px solid var(--gold);
+    outline-offset: 1px;
+    border-color: var(--gold);
+  }
+  .points-cell{
+    font-family:'Cairo', sans-serif;
+    font-weight:900;
+    color: var(--gold);
+    font-size:16px;
+  }
+
+  .empty{
+    text-align:center;
+    color: var(--chalk-dim);
+    font-size:14px;
+    padding:20px 0;
+  }
+
+  .toast{
+    position:fixed;
+    bottom:22px; left:50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--chalk);
+    color: var(--pitch-dark);
+    font-family:'Cairo', sans-serif;
+    font-weight:700;
+    font-size:14px;
+    padding:10px 18px;
+    border-radius:10px;
+    opacity:0;
+    pointer-events:none;
+    transition: all .25s ease;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top-nav">
+    <a href="lineup.html">التشكيلة</a>
+    <a href="ranking.html" class="active">الترتيب</a>
+  </div>
+  <header>
+    <div class="eyebrow">موسم الأسبوعيات</div>
+    <h1>الترتيب</h1>
+    <div class="sub">نقاط الفوز لكل لاعب — ١٠ نقاط للفوز، صفر للخسارة</div>
+  </header>
+
+  <div class="card">
+    <h2>جدول اللاعبين</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>اللاعب</th>
+          <th class="center">لعب</th>
+          <th class="center">النقاط</th>
+        </tr>
+      </thead>
+      <tbody id="rankingBody"></tbody>
+    </table>
+    <div class="empty" id="emptyState" style="display:none">مافيه لاعبين بعد. أضف أسماء من صفحة التشكيلة أول.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast">تم الحفظ ✓</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBcxBeY7pjJ5iEHB45-wJh6Pre0qSnZdVI",
+    authDomain: "training-f7016.firebaseapp.com",
+    projectId: "training-f7016",
+    storageBucket: "training-f7016.firebasestorage.app",
+    messagingSenderId: "263642447317",
+    appId: "1:263642447317:web:664999b5955045eac2915c",
+    measurementId: "G-XH8BPJJHQ2"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const sharedRef = doc(db, 'lineup', 'shared');
+  const statsRef = doc(db, 'lineup', 'stats');
+
+  let namesList = [];
+  let statsMap = {};
+  let saveTimer = null;
+
+  function normalize(name){ return name.trim(); }
+
+  let storageWarned = false;
+  function notifyStorageIssue(){
+    if(storageWarned) return;
+    storageWarned = true;
+    const toast = document.getElementById('toast');
+    if(!toast) return;
+    const original = toast.textContent;
+    toast.textContent = 'تنبيه: تعذر الاتصال بقاعدة البيانات المشتركة الآن';
+    toast.classList.add('show');
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => { toast.textContent = original; }, 300);
+    }, 3200);
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  onSnapshot(sharedRef, (snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    const raw = data.names || '';
+    namesList = raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+    render();
+  }, () => notifyStorageIssue());
+
+  onSnapshot(statsRef, (snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    statsMap = { ...(data.players || {}) };
+    render();
+  }, () => notifyStorageIssue());
+
+  function allPlayerNames(){
+    const set = new Map(); // normalized -> display name
+    namesList.forEach(n => set.set(normalize(n), n));
+    Object.keys(statsMap).forEach(k => { if(!set.has(k)) set.set(k, k); });
+    return [...set.entries()]; // [normalized, displayName][]
+  }
+
+  function render(){
+    const tbody = document.getElementById('rankingBody');
+    const emptyState = document.getElementById('emptyState');
+    const rows = allPlayerNames().map(([key, name]) => {
+      const stat = statsMap[key] || { played: 0, points: 0 };
+      return { key, name, played: stat.played || 0, points: stat.points || 0 };
+    });
+
+    rows.sort((a, b) => b.points - a.points || b.played - a.played);
+
+    if(rows.length === 0){
+      tbody.innerHTML = '';
+      emptyState.style.display = 'block';
+      return;
+    }
+    emptyState.style.display = 'none';
+
+    tbody.innerHTML = rows.map((r, idx) => `
+      <tr data-key="${escapeHtml(r.key)}">
+        <td>
+          <span class="rank-badge">${idx+1}</span>
+          <span class="player-name">${escapeHtml(r.name)}</span>
+        </td>
+        <td class="center">
+          <input type="number" min="0" class="stat-input played-input" value="${r.played}">
+        </td>
+        <td class="center">
+          <input type="number" min="0" class="stat-input points-input" value="${r.points}">
+        </td>
+      </tr>
+    `).join('');
+
+    tbody.querySelectorAll('tr').forEach(tr => {
+      const key = tr.dataset.key;
+      tr.querySelector('.played-input').addEventListener('change', (e) => {
+        updateStat(key, 'played', e.target.value);
+      });
+      tr.querySelector('.points-input').addEventListener('change', (e) => {
+        updateStat(key, 'points', e.target.value);
+      });
+    });
+  }
+
+  function updateStat(key, field, value){
+    const num = Math.max(0, parseInt(value, 10) || 0);
+    const current = statsMap[key] || { played: 0, points: 0 };
+    statsMap[key] = { ...current, [field]: num };
+    scheduleSave();
+  }
+
+  function scheduleSave(){
+    if(saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(async () => {
+      try{
+        await setDoc(statsRef, { players: statsMap }, { merge: true });
+        const toast = document.getElementById('toast');
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 1400);
+      } catch(err){
+        notifyStorageIssue();
+      }
+    }, 500);
+  }
+</script>
+</body>
+</html>
