@@ -54,6 +54,31 @@
   }
   .wrap{max-width:640px; margin:0 auto; position:relative; z-index:1;}
 
+  .top-nav{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    margin-bottom:18px;
+  }
+  .top-nav a{
+    font-family:'Cairo', sans-serif;
+    font-size:13px;
+    font-weight:700;
+    text-decoration:none;
+    color: var(--chalk-dim);
+    background: rgba(22,67,46,0.55);
+    border: 1px solid var(--line);
+    padding:8px 18px;
+    border-radius:999px;
+    transition: all .15s ease;
+  }
+  .top-nav a:hover{ color: var(--chalk); border-color: var(--chalk-dim); }
+  .top-nav a.active{
+    color: var(--pitch-dark);
+    background: var(--gold);
+    border-color: var(--gold);
+  }
+
   header{
     text-align:center;
     margin-bottom:22px;
@@ -348,6 +373,13 @@
     margin-bottom:8px;
   }
 
+  .result-block{
+    margin-top:14px;
+    padding-top:14px;
+    border-top:1px dashed var(--line);
+  }
+  .result-block .hint{ margin-top:10px; color: var(--gold); }
+
   .actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
   button.secondary{
     background: transparent;
@@ -389,6 +421,10 @@
 </head>
 <body>
 <div class="wrap">
+  <div class="top-nav">
+    <a href="lineup.html" class="active">التشكيلة</a>
+    <a href="ranking.html">الترتيب</a>
+  </div>
   <header>
     <div class="eyebrow">تمرين كل اثنين</div>
     <h1>تشكيلة الأسبوع</h1>
@@ -398,7 +434,7 @@
   <div class="card">
     <h2>١. قائمة الأسماء</h2>
     <textarea id="namesInput" placeholder="الصق الأسماء هنا، كل اسم في سطر مستقل&#10;مثال:&#10;محمد العتيبي&#10;فهد الدوسري&#10;سلطان القحطاني"></textarea>
-    <div class="hint">كل اسم في سطر لحاله. القائمة والخانة والمهارة تنحفظ عندك تلقائيًا، فأول مرة تدخلها تلقى كل شي جاهز.</div>
+    <div class="hint">كل اسم في سطر لحاله. القائمة والخانة والمهارة تنحفظ وتتزامن تلقائيًا، فأول ما تفتح التطبيق تلقى القائمة طالعة جاهزة بدون ما تضغط أي زر.</div>
     <button class="primary" onclick="generateList()">عرض القائمة</button>
   </div>
 
@@ -438,6 +474,15 @@
       <button class="secondary" onclick="copyList()">نسخ القائمة</button>
       <button class="secondary" onclick="resetAll()">تصفير الاختيار</button>
     </div>
+
+    <div class="result-block" id="winnerSection">
+      <div class="waiting-title">مين فاز اليوم؟</div>
+      <div class="actions">
+        <button class="secondary" onclick="recordResult('A')">فاز الفريق الأول</button>
+        <button class="secondary" onclick="recordResult('B')">فاز الفريق الثاني</button>
+      </div>
+      <div class="hint" id="winnerStatus"></div>
+    </div>
   </div>
 </div>
 
@@ -461,6 +506,7 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const sharedRef = doc(db, 'lineup', 'shared');
+  const statsRef = doc(db, 'lineup', 'stats');
 
   const MAX = 16;
   const POSITIONS = ['دفاع', 'وسط', 'جناح', 'انتظار'];
@@ -470,6 +516,7 @@
   let selected = new Set();
   let positionMap = {}; // normalized name -> position
   let skillMap = {}; // normalized name -> skill (string "1".."10")
+  let statsMap = {}; // normalized name -> { played, points }
 
   let docLoaded = false;
   let resolveDocReady;
@@ -500,21 +547,6 @@
       toast.classList.remove('show');
       setTimeout(() => { toast.textContent = original; }, 300);
     }, 3200);
-  }
-
-  // ترحيل الأسماء القديمة للخانات: محور -> وسط، وسط -> جناح
-  function migratePositions(map){
-    let migrated = false;
-    for(const key in map){
-      if(map[key] === 'وسط'){ map[key] = '__تمرحيل_جناح__'; migrated = true; }
-    }
-    for(const key in map){
-      if(map[key] === 'محور'){ map[key] = 'وسط'; migrated = true; }
-    }
-    for(const key in map){
-      if(map[key] === '__تمرحيل_جناح__'){ map[key] = 'جناح'; }
-    }
-    return migrated;
   }
 
   function selectedNames(){
@@ -559,6 +591,7 @@
   }
 
   let lastRemoteSelected = [];
+  let autoGenTried = false;
 
   onSnapshot(sharedRef, (snap) => {
     const data = snap.exists() ? snap.data() : {};
@@ -566,10 +599,6 @@
     positionMap = { ...(data.positions || {}) };
     skillMap = { ...(data.skills || {}) };
     lastRemoteSelected = data.selected || [];
-
-    if(migratePositions(positionMap)){
-      persist({ positions: positionMap });
-    }
 
     const textarea = document.getElementById('namesInput');
     if(textarea && document.activeElement !== textarea && textarea.value !== remoteNames){
@@ -582,6 +611,9 @@
       syncRowControls();
       updateScoreboard();
       updateResult();
+    } else if(!autoGenTried && remoteNames.trim() !== ''){
+      autoGenTried = true;
+      generateList();
     }
 
     if(!docLoaded){
@@ -594,6 +626,13 @@
       docLoaded = true;
       resolveDocReady();
     }
+  });
+
+  onSnapshot(statsRef, (snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    statsMap = { ...(data.players || {}) };
+  }, () => {
+    notifyStorageIssue();
   });
 
   function waitForDoc(){
@@ -855,7 +894,46 @@
     updateScoreboard();
     updateResult();
     persist({ selected: [] });
+    const status = document.getElementById('winnerStatus');
+    if(status) status.textContent = '';
     document.getElementById('listSection').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  let resultRecording = false;
+  async function recordResult(winner){
+    if(resultRecording) return;
+    const { teamA, teamB } = buildTeams();
+    if(teamA.length === 0 && teamB.length === 0) return;
+
+    resultRecording = true;
+    const status = document.getElementById('winnerStatus');
+    if(status) status.textContent = 'جاري تسجيل النتيجة...';
+
+    const winners = winner === 'A' ? teamA : teamB;
+    const losers = winner === 'A' ? teamB : teamA;
+    const updated = { ...statsMap };
+    winners.forEach(i => {
+      const key = normalize(players[i]);
+      const cur = updated[key] || { played: 0, points: 0 };
+      updated[key] = { played: cur.played + 1, points: cur.points + 10 };
+    });
+    losers.forEach(i => {
+      const key = normalize(players[i]);
+      const cur = updated[key] || { played: 0, points: 0 };
+      updated[key] = { played: cur.played + 1, points: cur.points + 0 };
+    });
+
+    try{
+      await setDoc(statsRef, { players: updated }, { merge: true });
+      statsMap = updated;
+      const label = winner === 'A' ? 'الفريق الأول' : 'الفريق الثاني';
+      if(status) status.textContent = `تم تسجيل فوز ${label} ✓ — الترتيب اتحدث`;
+    } catch(err){
+      notifyStorageIssue();
+      if(status) status.textContent = 'تعذر تسجيل النتيجة، حاول مرة ثانية';
+    } finally {
+      resultRecording = false;
+    }
   }
 
   function escapeHtml(str){
@@ -867,6 +945,7 @@
   window.generateList = generateList;
   window.copyList = copyList;
   window.resetAll = resetAll;
+  window.recordResult = recordResult;
 </script>
 </body>
 </html>
