@@ -8,28 +8,33 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --pitch: #1f5c3f;
-    --pitch-dark: #16432e;
-    --chalk: #f4f2e9;
-    --chalk-dim: #cfd9cf;
-    --gold: #d9a441;
-    --red-card: #c1443b;
-    --line: rgba(244,242,233,0.18);
+    --pitch: #2f6b46;
+    --pitch-dark: #1f4a30;
+    --chalk: #3a2f21;
+    --chalk-dim: #8a7a63;
+    --cream: #faf5e6;
+    --cream-dim: rgba(250,245,230,0.75);
+    --gold: #c8892c;
+    --gold-fill: #d9a441;
+    --red-card: #b3392f;
+    --line: rgba(58,47,33,0.16);
+    --paper: #f1e8d3;
+    --card-bg: rgba(250,245,230,0.72);
   }
   *{box-sizing:border-box;}
   body{
     margin:0;
     min-height:100vh;
     position:relative;
-    background:
-      radial-gradient(ellipse 700px 500px at -5% -10%, rgba(244,242,233,0.16), transparent 55%),
-      radial-gradient(ellipse 700px 500px at 105% -10%, rgba(217,164,65,0.14), transparent 55%),
-      radial-gradient(ellipse 900px 700px at 50% 110%, rgba(0,0,0,0.35), transparent 60%),
-      repeating-linear-gradient(65deg, var(--pitch) 0px, var(--pitch) 70px, var(--pitch-dark) 70px, var(--pitch-dark) 140px);
+    background-color: var(--paper);
+    background-image:
+      radial-gradient(ellipse 500px 340px at 8% 0%, rgba(47,107,70,0.10), transparent 60%),
+      radial-gradient(ellipse 500px 340px at 92% 0%, rgba(200,137,44,0.12), transparent 60%);
     font-family:'Tajawal', sans-serif;
     color: var(--chalk);
     padding: 24px 16px 60px;
   }
+  /* خطوط ملعب خافتة: دائرة المنتصف وخط نصف الملعب */
   body::before{
     content:"";
     position:fixed;
@@ -37,19 +42,24 @@
     pointer-events:none;
     background-repeat: no-repeat, no-repeat;
     background-image:
-      radial-gradient(circle, transparent 0 118px, rgba(244,242,233,0.14) 118px 121px, transparent 121px),
-      linear-gradient(rgba(244,242,233,0.14), rgba(244,242,233,0.14));
+      radial-gradient(circle, transparent 0 118px, rgba(58,47,33,0.09) 118px 121px, transparent 121px),
+      linear-gradient(rgba(58,47,33,0.09), rgba(58,47,33,0.09));
     background-size: 240px 240px, 2px 640px;
-    background-position: 50% 42%, 50% 42%;
-    opacity:0.55;
+    background-position: 50% 38%, 50% 38%;
     z-index:0;
   }
+  /* شريط مدرجات خافت أعلى الصفحة + كرة قدم زخرفية أسفل الصفحة */
   body::after{
     content:"";
     position:fixed;
     inset:0;
     pointer-events:none;
-    box-shadow: inset 0 0 160px rgba(0,0,0,0.55);
+    background-repeat: repeat-x;
+    background-image:
+      repeating-linear-gradient(-35deg, rgba(58,47,33,0.05) 0 10px, transparent 10px 22px);
+    background-position: 0 0;
+    background-size: 100% 90px;
+    opacity:0.4;
     z-index:0;
   }
   .wrap{max-width:640px; margin:0 auto; position:relative; z-index:1;}
@@ -66,7 +76,7 @@
     font-weight:700;
     text-decoration:none;
     color: var(--chalk-dim);
-    background: rgba(22,67,46,0.55);
+    background: var(--card-bg);
     border: 1px solid var(--line);
     padding:8px 18px;
     border-radius:999px;
@@ -74,9 +84,9 @@
   }
   .top-nav a:hover{ color: var(--chalk); border-color: var(--chalk-dim); }
   .top-nav a.active{
-    color: var(--pitch-dark);
-    background: var(--gold);
-    border-color: var(--gold);
+    color: var(--cream);
+    background: var(--pitch-dark);
+    border-color: var(--pitch-dark);
   }
 
   header{
@@ -97,6 +107,7 @@
     font-size: clamp(28px, 6vw, 40px);
     margin:0;
     line-height:1.15;
+    color: var(--pitch-dark);
   }
   .sub{
     color: var(--chalk-dim);
@@ -121,24 +132,24 @@
     font-family:'Cairo', sans-serif;
     font-weight:900;
     font-size:30px;
-    color: var(--chalk);
+    color: var(--cream);
     min-width:64px;
     text-align:center;
     letter-spacing:1px;
   }
   .scoreboard .of{
-    color: var(--chalk-dim);
+    color: var(--cream-dim);
     font-size:13px;
   }
-  .scoreboard.full .count{ color: var(--gold); }
+  .scoreboard.full .count{ color: var(--gold-fill); }
 
   .card{
-    background: rgba(22,67,46,0.55);
+    background: var(--card-bg);
     border: 1px solid var(--line);
     border-radius:16px;
     padding:18px;
     margin-bottom:18px;
-    backdrop-filter: blur(2px);
+    box-shadow: 0 6px 18px rgba(58,47,33,0.08);
   }
   .card h2{
     font-family:'Cairo', sans-serif;
@@ -148,9 +159,9 @@
   }
   textarea{
     width:100%;
-    min-height:120px;
+    min-height:64px;
     resize:vertical;
-    background: rgba(244,242,233,0.06);
+    background: rgba(58,47,33,0.05);
     border: 1px solid var(--line);
     border-radius:10px;
     color: var(--chalk);
@@ -159,7 +170,7 @@
     padding:12px;
     line-height:1.8;
   }
-  textarea::placeholder{ color: rgba(244,242,233,0.4); }
+  textarea::placeholder{ color: rgba(58,47,33,0.4); }
   textarea:focus, button:focus-visible, .row-main:focus-visible{
     outline: 2px solid var(--gold);
     outline-offset: 2px;
@@ -173,7 +184,7 @@
 
   button.primary{
     margin-top:12px;
-    background: var(--gold);
+    background: var(--gold-fill);
     color: var(--pitch-dark);
     border:none;
     font-family:'Cairo', sans-serif;
@@ -200,8 +211,8 @@
     user-select:none;
   }
   .row:last-child{ border-bottom:none; }
-  .row:hover{ background: rgba(244,242,233,0.05); }
-  .row.selected{ background: rgba(217,164,65,0.12); }
+  .row:hover{ background: rgba(58,47,33,0.04); }
+  .row.selected{ background: rgba(200,137,44,0.14); }
   .row.disabled .row-main{ opacity:0.35; cursor:not-allowed; }
 
   .row-main{
@@ -239,14 +250,14 @@
   }
   .pos-btn:hover{ border-color: var(--chalk); color: var(--chalk); }
   .pos-btn.active{
-    background: var(--gold);
-    border-color: var(--gold);
+    background: var(--gold-fill);
+    border-color: var(--gold-fill);
     color: var(--pitch-dark);
   }
   .pos-btn[data-pos="انتظار"].active{
     background: var(--chalk-dim);
     border-color: var(--chalk-dim);
-    color: var(--pitch-dark);
+    color: var(--cream);
   }
   .pos-btn[data-pos="انتظار"]{
     border-style: dashed;
@@ -257,7 +268,7 @@
     font-size:12px;
     font-weight:700;
     border:1px solid var(--chalk-dim);
-    background: rgba(244,242,233,0.06);
+    background: rgba(58,47,33,0.05);
     color: var(--chalk);
     padding:5px 6px;
     border-radius:8px;
@@ -276,8 +287,8 @@
     transition: all .15s ease;
   }
   .row.selected .checkbox{
-    background: var(--gold);
-    border-color: var(--gold);
+    background: var(--gold-fill);
+    border-color: var(--gold-fill);
   }
   .checkbox svg{ display:none; width:14px; height:14px; }
   .row.selected .checkbox svg{ display:block; }
@@ -287,14 +298,14 @@
     font-family:'Cairo', sans-serif;
     font-weight:900;
     font-size:13px;
-    color: var(--pitch-dark);
+    color: var(--cream);
     background: var(--chalk-dim);
     min-width:26px;
     height:26px;
     border-radius:50%;
     display:flex; align-items:center; justify-content:center;
   }
-  .row.selected .badge{ background: var(--gold); }
+  .row.selected .badge{ background: var(--gold-fill); color: var(--pitch-dark); }
 
   #resultSection{ display:none; }
 
@@ -391,14 +402,14 @@
     border-radius:10px;
     cursor:pointer;
   }
-  button.secondary:hover{ background: rgba(244,242,233,0.08); }
+  button.secondary:hover{ background: rgba(58,47,33,0.06); }
 
   .toast{
     position:fixed;
     bottom:22px; left:50%;
     transform: translateX(-50%) translateY(20px);
-    background: var(--chalk);
-    color: var(--pitch-dark);
+    background: var(--pitch-dark);
+    color: var(--cream);
     font-family:'Cairo', sans-serif;
     font-weight:700;
     font-size:14px;
@@ -407,7 +418,7 @@
     opacity:0;
     pointer-events:none;
     transition: all .25s ease;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 24px rgba(58,47,33,0.35);
   }
   .toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
 
@@ -426,7 +437,7 @@
     <a href="ranking.html">الترتيب</a>
   </div>
   <header>
-    <div class="eyebrow">تمرين كل اثنين</div>
+    <div class="eyebrow">تمرين أيوب</div>
     <h1>تشكيلة الأسبوع</h1>
     <div class="sub">الصق أسماء الشباب، حدد الخانة والمهارة، وعلّم على ١٦ لاعب لهالأسبوع</div>
   </header>
@@ -434,7 +445,6 @@
   <div class="card">
     <h2>١. قائمة الأسماء</h2>
     <textarea id="namesInput" placeholder="الصق الأسماء هنا، كل اسم في سطر مستقل&#10;مثال:&#10;محمد العتيبي&#10;فهد الدوسري&#10;سلطان القحطاني"></textarea>
-    <div class="hint">كل اسم في سطر لحاله. القائمة والخانة والمهارة تنحفظ وتتزامن تلقائيًا، فأول ما تفتح التطبيق تلقى القائمة طالعة جاهزة بدون ما تضغط أي زر.</div>
     <button class="primary" onclick="generateList()">عرض القائمة</button>
   </div>
 
@@ -514,9 +524,9 @@
 
   let players = [];
   let selected = new Set();
-  let positionMap = {}; // normalized name -> position
-  let skillMap = {}; // normalized name -> skill (string "1".."10")
-  let statsMap = {}; // normalized name -> { played, points }
+  let positionMap = {}; // player index (string) -> position
+  let skillMap = {}; // player index (string) -> skill ("1".."10")
+  let statsMap = {}; // normalized name -> { played, points } (يبقى بالاسم لأنه يتراكم عبر أسابيع)
 
   let docLoaded = false;
   let resolveDocReady;
@@ -529,8 +539,8 @@
   function normalize(name){
     return name.trim();
   }
-  function getSkill(name){
-    const v = skillMap[normalize(name)];
+  function getSkill(i){
+    const v = skillMap[i];
     return v ? Number(v) : 5;
   }
 
@@ -549,18 +559,36 @@
     }, 3200);
   }
 
-  function selectedNames(){
-    return [...selected].map(i => players[i]).filter(Boolean);
+  function selectedIndices(){
+    return [...selected];
   }
 
-  function applySelectedFromNames(namesArr){
-    const idxMap = new Map(players.map((p, i) => [normalize(p), i]));
+  function applySelectedFromIndices(idxArr){
     const newSelected = new Set();
-    (namesArr || []).forEach(n => {
-      const idx = idxMap.get(normalize(n));
-      if(idx !== undefined) newSelected.add(idx);
+    (idxArr || []).forEach(i => {
+      if(Number.isInteger(i) && i >= 0 && i < players.length) newSelected.add(i);
     });
     selected = newSelected;
+  }
+
+  // تحويل بيانات قديمة كانت محفوظة بالاسم (بدل الفهرس) لمرة واحدة فقط،
+  // موصوفة بعلامة formatVersion حتى ما تتكرر
+  function migrateNameKeyedMap(oldMap){
+    const result = {};
+    players.forEach((name, i) => {
+      const v = oldMap[normalize(name)];
+      if(v !== undefined) result[i] = v;
+    });
+    return result;
+  }
+  function migrateNameArrayToIndices(namesArr){
+    const idxMap = new Map(players.map((p, i) => [normalize(p), i]));
+    const result = [];
+    (namesArr || []).forEach(n => {
+      const idx = idxMap.get(normalize(n));
+      if(idx !== undefined) result.push(idx);
+    });
+    return result;
   }
 
   async function persist(partial){
@@ -571,20 +599,42 @@
     }
   }
 
+  function positionRank(pos){
+    if(pos === 'دفاع') return 0;
+    if(pos === 'وسط') return 1;
+    if(pos === 'جناح') return 2;
+    if(pos === 'انتظار') return 4;
+    return 3; // بدون خانة محددة
+  }
+
+  // يعيد ترتيب صفوف اللاعبين بصريًا حسب الخانة: دفاع ثم وسط ثم جناح
+  // بدون إعادة بناء عناصر DOM (يحافظ على مستمعي الأحداث)
+  function reorderRows(){
+    const container = document.getElementById('rowsContainer');
+    if(!container) return;
+    const rows = [...container.querySelectorAll('.row')];
+    rows.sort((a, b) => {
+      const ia = Number(a.dataset.index), ib = Number(b.dataset.index);
+      const ra = positionRank(positionMap[ia]);
+      const rb = positionRank(positionMap[ib]);
+      if(ra !== rb) return ra - rb;
+      return ia - ib;
+    });
+    rows.forEach(r => container.appendChild(r));
+  }
+
   // يحدّث أزرار الخانة وقائمة المهارة داخل الصفوف الموجودة بدون إعادة بنائها
   // (عشان ما نفقد نفس عنصر DOM ومستمعي الأحداث)
   function syncRowControls(){
     document.querySelectorAll('.row').forEach(row => {
       const i = Number(row.dataset.index);
-      const name = players[i];
-      if(name === undefined) return;
-      const key = normalize(name);
+      if(players[i] === undefined) return;
       row.querySelectorAll('.pos-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.pos === positionMap[key]);
+        b.classList.toggle('active', b.dataset.pos === positionMap[i]);
       });
       const sel = row.querySelector('.skill-select');
       if(sel){
-        const skillVal = skillMap[key] || '';
+        const skillVal = skillMap[i] || '';
         if(sel.value !== skillVal) sel.value = skillVal;
       }
     });
@@ -592,13 +642,36 @@
 
   let lastRemoteSelected = [];
   let autoGenTried = false;
+  let didMigrateFormat = false;
+  let remoteRaw = { positions: {}, skills: {}, selected: [], formatVersion: 1 };
+
+  // يطبّق آخر بيانات وصلت من Firestore على الحالة المحلية، مع ترحيل
+  // البيانات القديمة (المحفوظة بالاسم) للتنسيق الجديد (بالفهرس) لو احتاج الأمر
+  function applyRemoteState(){
+    if(remoteRaw.formatVersion < 2 && !didMigrateFormat){
+      didMigrateFormat = true;
+      positionMap = migrateNameKeyedMap(remoteRaw.positions);
+      skillMap = migrateNameKeyedMap(remoteRaw.skills);
+      const migratedSelected = migrateNameArrayToIndices(remoteRaw.selected);
+      applySelectedFromIndices(migratedSelected);
+      persist({ positions: positionMap, skills: skillMap, selected: migratedSelected, formatVersion: 2 });
+    } else {
+      positionMap = remoteRaw.positions;
+      skillMap = remoteRaw.skills;
+      applySelectedFromIndices(remoteRaw.selected);
+    }
+  }
 
   onSnapshot(sharedRef, (snap) => {
     const data = snap.exists() ? snap.data() : {};
     const remoteNames = data.names || '';
-    positionMap = { ...(data.positions || {}) };
-    skillMap = { ...(data.skills || {}) };
-    lastRemoteSelected = data.selected || [];
+    remoteRaw = {
+      positions: { ...(data.positions || {}) },
+      skills: { ...(data.skills || {}) },
+      selected: data.selected || [],
+      formatVersion: data.formatVersion || 1
+    };
+    lastRemoteSelected = remoteRaw.selected;
 
     const textarea = document.getElementById('namesInput');
     if(textarea && document.activeElement !== textarea && textarea.value !== remoteNames){
@@ -606,9 +679,10 @@
     }
 
     if(players.length > 0){
-      applySelectedFromNames(lastRemoteSelected);
+      applyRemoteState();
       renderRows();
       syncRowControls();
+      reorderRows();
       updateScoreboard();
       updateResult();
     } else if(!autoGenTried && remoteNames.trim() !== ''){
@@ -654,7 +728,7 @@
     document.getElementById('resultSection').style.display = 'none';
 
     await waitForDoc();
-    applySelectedFromNames(lastRemoteSelected);
+    applyRemoteState();
 
     container.innerHTML = '';
 
@@ -667,11 +741,11 @@
         row.dataset.index = i;
 
         const posBtns = POSITIONS.map(p => {
-          const isActive = positionMap[normalize(name)] === p;
+          const isActive = positionMap[i] === p;
           return `<button type="button" class="pos-btn${isActive ? ' active' : ''}" data-pos="${p}">${p}</button>`;
         }).join('');
 
-        const currentSkill = skillMap[normalize(name)] || '';
+        const currentSkill = skillMap[i] || '';
         const skillOptions = ['<option value="">م-</option>']
           .concat([1,2,3,4,5,6,7,8,9,10].map(n =>
             `<option value="${n}"${String(n) === currentSkill ? ' selected' : ''}>${n}</option>`
@@ -680,7 +754,7 @@
         row.innerHTML = `
           <div class="row-main" role="checkbox" aria-checked="false" tabindex="0">
             <div class="checkbox">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#16432e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#1f4a30" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
             <div class="name">${escapeHtml(name)}</div>
             <div class="badge" style="display:none"></div>
@@ -700,13 +774,13 @@
         row.querySelectorAll('.pos-btn').forEach(btn => {
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            setPosition(name, btn.dataset.pos, row);
+            setPosition(i, btn.dataset.pos, row);
           });
         });
 
         row.querySelector('.skill-select').addEventListener('click', (e) => e.stopPropagation());
         row.querySelector('.skill-select').addEventListener('change', (e) => {
-          setSkill(name, e.target.value);
+          setSkill(i, e.target.value);
         });
 
         container.appendChild(row);
@@ -716,29 +790,29 @@
     // طبّق الاختيار المشترك الحالي بعد ما الصفوف صارت جاهزة
     renderRows();
     syncRowControls();
+    reorderRows();
 
     updateScoreboard();
     updateResult();
     document.getElementById('listSection').scrollIntoView({behavior:'smooth', block:'start'});
   }
 
-  function setPosition(name, pos, row){
-    const key = normalize(name);
-    const current = positionMap[key];
-    positionMap[key] = (current === pos) ? undefined : pos;
-    if(positionMap[key] === undefined) delete positionMap[key];
+  function setPosition(i, pos, row){
+    const current = positionMap[i];
+    positionMap[i] = (current === pos) ? undefined : pos;
+    if(positionMap[i] === undefined) delete positionMap[i];
 
     row.querySelectorAll('.pos-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.pos === positionMap[key]);
+      b.classList.toggle('active', b.dataset.pos === positionMap[i]);
     });
 
     persist({ positions: positionMap });
+    reorderRows();
     updateResult();
   }
 
-  function setSkill(name, value){
-    const key = normalize(name);
-    if(value === ''){ delete skillMap[key]; } else { skillMap[key] = value; }
+  function setSkill(i, value){
+    if(value === ''){ delete skillMap[i]; } else { skillMap[i] = value; }
     persist({ skills: skillMap });
     updateResult();
   }
@@ -750,7 +824,7 @@
     renderRows();
     updateScoreboard();
     updateResult();
-    persist({ selected: selectedNames() });
+    persist({ selected: selectedIndices() });
   }
 
   function renderRows(){
@@ -785,12 +859,12 @@
   function buildTeams(){
     const groups = { 'دفاع': [], 'وسط': [], 'جناح': [], other: [] };
     [...selected].forEach(i => {
-      const pos = positionMap[normalize(players[i])];
+      const pos = positionMap[i];
       if(pos === 'دفاع' || pos === 'وسط' || pos === 'جناح'){ groups[pos].push(i); }
       else { groups.other.push(i); }
     });
     ['دفاع', 'وسط', 'جناح', 'other'].forEach(k => {
-      groups[k].sort((a, b) => getSkill(players[b]) - getSkill(players[a]));
+      groups[k].sort((a, b) => getSkill(b) - getSkill(a));
     });
 
     let teamA = [], teamB = [];
@@ -814,14 +888,14 @@
   function waitingPlayers(){
     return players
       .map((name, i) => ({ i, name }))
-      .filter(p => positionMap[normalize(p.name)] === 'انتظار');
+      .filter(p => positionMap[p.i] === 'انتظار');
   }
 
   function renderTeamList(el, list){
     el.innerHTML = list.map((i, idx) => {
-      const pos = positionMap[normalize(players[i])];
+      const pos = positionMap[i];
       const posTag = pos ? `<span class="pos-tag">${pos}</span>` : '';
-      const skillVal = skillMap[normalize(players[i])];
+      const skillVal = skillMap[i];
       const skillTag = skillVal ? `<span class="skill-tag">${toArabicNum(skillVal)}</span>` : '';
       return `
       <div class="final-item">
