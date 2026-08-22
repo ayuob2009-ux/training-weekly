@@ -419,11 +419,29 @@
     } catch(e){ /* تجاهل، بيرسم بالخط الاحتياطي لو صار خلل */ }
 
     const scale = 2;
-    const width = 720;
+    const margin = 24;
+    const badgeSpace = 38; // قطر الدائرة + مسافة قبل الاسم
+    const playedColW = 62;
+    const pointsColW = 74;
+    const colGap = 16;
     const headerHeight = 130;
     const rowHeight = 46;
     const footerHeight = 26;
     const height = headerHeight + rows.length * rowHeight + footerHeight;
+
+    // نقيس أطول اسم عشان نضبط عرض اللوحة تلقائيًا فتتقارب الأعمدة من بعض
+    const measureCanvas = document.createElement('canvas');
+    const mctx = measureCanvas.getContext('2d');
+    mctx.font = '600 16px Tajawal, sans-serif';
+    let maxNameWidth = 90;
+    rows.forEach(r => {
+      const w = mctx.measureText(r.name).width;
+      if(w > maxNameWidth) maxNameWidth = w;
+    });
+    const nameColW = Math.min(maxNameWidth + 8, 260);
+
+    const contentWidth = badgeSpace + nameColW + colGap + playedColW + colGap + pointsColW;
+    const width = contentWidth + margin * 2;
 
     const canvas = document.createElement('canvas');
     canvas.width = width * scale;
@@ -442,34 +460,37 @@
 
     // العنوان
     ctx.fillStyle = '#1f4a30';
-    ctx.font = '900 26px Cairo, sans-serif';
+    ctx.font = '900 22px Cairo, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
-    ctx.fillText('الترتيب — أفضل ٢٠ لاعب', width / 2, 52);
+    ctx.fillText('الترتيب — أفضل ٢٠ لاعب', width / 2, 48);
 
     ctx.fillStyle = '#8a7a63';
-    ctx.font = '600 13px Tajawal, sans-serif';
-    ctx.fillText('نقاط الفوز الأسبوعية', width / 2, 72);
+    ctx.font = '600 12.5px Tajawal, sans-serif';
+    ctx.fillText('نقاط الفوز الأسبوعية', width / 2, 68);
 
-    // رؤوس الأعمدة
-    const nameX = width - 70;
-    const playedX = 230;
-    const pointsX = 110;
+    // مواضع الأعمدة من اليمين لليسار: الشارة+الاسم، لعب، النقاط
+    const rightEdge = width - margin;
+    const badgeCxBase = rightEdge - 14;
+    const nameRightX = badgeCxBase - 14 - 10;
+    const nameLeftX = nameRightX - nameColW;
+    const playedCx = nameLeftX - colGap - playedColW / 2;
+    const pointsCx = playedCx - playedColW / 2 - colGap - pointsColW / 2;
+
     const colY = 100;
-
-    ctx.font = '700 12.5px Cairo, sans-serif';
+    ctx.font = '700 12px Cairo, sans-serif';
     ctx.fillStyle = '#8a7a63';
     ctx.textAlign = 'right';
-    ctx.fillText('اللاعب', nameX, colY);
+    ctx.fillText('اللاعب', nameRightX, colY);
     ctx.textAlign = 'center';
-    ctx.fillText('لعب', playedX, colY);
-    ctx.fillText('النقاط', pointsX, colY);
+    ctx.fillText('لعب', playedCx, colY);
+    ctx.fillText('النقاط', pointsCx, colY);
 
     ctx.strokeStyle = 'rgba(58,47,33,0.16)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(30, colY + 10);
-    ctx.lineTo(width - 30, colY + 10);
+    ctx.moveTo(margin + 6, colY + 10);
+    ctx.lineTo(width - margin - 6, colY + 10);
     ctx.stroke();
 
     const badgeColors = ['#d9a441', '#cfd3c8', '#cd8a4f'];
@@ -478,33 +499,33 @@
 
       if(idx % 2 === 1){
         ctx.fillStyle = 'rgba(58,47,33,0.035)';
-        ctx.fillRect(24, y, width - 48, rowHeight);
+        ctx.fillRect(margin, y, width - margin * 2, rowHeight);
       }
 
-      const badgeCx = width - 45, badgeCy = y + rowHeight / 2;
+      const badgeCy = y + rowHeight / 2;
       ctx.beginPath();
-      ctx.arc(badgeCx, badgeCy, 14, 0, Math.PI * 2);
+      ctx.arc(badgeCxBase, badgeCy, 14, 0, Math.PI * 2);
       ctx.fillStyle = idx < 3 ? badgeColors[idx] : 'rgba(58,47,33,0.12)';
       ctx.fill();
       ctx.fillStyle = idx < 3 ? '#1f4a30' : '#8a7a63';
       ctx.font = '900 12.5px Cairo, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(String(idx + 1), badgeCx, badgeCy + 1);
+      ctx.fillText(String(idx + 1), badgeCxBase, badgeCy + 1);
 
       ctx.fillStyle = '#3a2f21';
       ctx.font = '600 16px Tajawal, sans-serif';
       ctx.textAlign = 'right';
-      ctx.fillText(r.name, nameX, badgeCy);
+      ctx.fillText(r.name, nameRightX, badgeCy);
 
       ctx.fillStyle = '#3a2f21';
       ctx.font = '700 15px Cairo, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(String(r.played), playedX, badgeCy);
+      ctx.fillText(String(r.played), playedCx, badgeCy);
 
       ctx.fillStyle = '#c8892c';
       ctx.font = '900 17px Cairo, sans-serif';
-      ctx.fillText(String(r.points), pointsX, badgeCy);
+      ctx.fillText(String(r.points), pointsCx, badgeCy);
     });
 
     ctx.textBaseline = 'alphabetic';
