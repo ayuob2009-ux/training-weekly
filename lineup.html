@@ -1011,35 +1011,35 @@
     ctx.translate(cx, cy);
     ctx.fillStyle = fillColor;
     ctx.strokeStyle = outlineColor;
-    ctx.lineWidth = 1.3;
+    ctx.lineWidth = 1.6;
     ctx.beginPath();
-    ctx.moveTo(-10, -9);
-    ctx.lineTo(-10, 12);
-    ctx.lineTo(10, 12);
-    ctx.lineTo(10, -9);
-    ctx.lineTo(6, -14);
-    ctx.lineTo(2.5, -9.5);
-    ctx.lineTo(-2.5, -9.5);
-    ctx.lineTo(-6, -14);
+    ctx.moveTo(-14, -12);
+    ctx.lineTo(-14, 16);
+    ctx.lineTo(14, 16);
+    ctx.lineTo(14, -12);
+    ctx.lineTo(8, -19);
+    ctx.lineTo(3.5, -13);
+    ctx.lineTo(-3.5, -13);
+    ctx.lineTo(-8, -19);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
     // ياقة
     ctx.beginPath();
-    ctx.arc(0, -8, 3, 0, Math.PI, false);
+    ctx.arc(0, -11, 4, 0, Math.PI, false);
     ctx.strokeStyle = outlineColor;
     ctx.stroke();
     ctx.restore();
 
     ctx.fillStyle = textColor;
-    ctx.font = '700 10.5px Tajawal, sans-serif';
+    ctx.font = '700 13px Tajawal, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
-    const shortName = name.length > 13 ? name.slice(0, 12) + '…' : name;
-    ctx.fillText(shortName, cx, cy + 28);
+    const shortName = name.length > 14 ? name.slice(0, 13) + '…' : name;
+    ctx.fillText(shortName, cx, cy + 36);
   }
 
-  // يرسم ملعب منظوري (شبه منحرف) بخطوط بيضاء وحارس + دفاع + وسط + جناح
+  // يرسم ملعب مستطيل عادي بخطوط عشب وخطوط بيضاء حقيقية، مع حارس + دفاع + وسط + جناح
   function drawPitchPanel(ctx, x, y, w, h, title, subtitle, layout, jerseyFill, jerseyOutline){
     // خلفية بطاقة داكنة خفيفة خلف الملعب
     ctx.fillStyle = '#1f4a30';
@@ -1059,92 +1059,63 @@
     const fieldTopY = y + 54;
     const fieldBottomY = y + h - 16;
     const fieldHeight = fieldBottomY - fieldTopY;
+    const fieldLeft = x + padSide;
+    const fieldRight = x + w - padSide;
+    const fieldWidth = fieldRight - fieldLeft;
 
-    const topLeftX = x + padSide;
-    const topRightX = x + w - padSide;
-    const bottomInset = (topRightX - topLeftX) * 0.20;
-    const bottomLeftX = topLeftX + bottomInset;
-    const bottomRightX = topRightX - bottomInset;
-
-    // قص المنطقة على شكل شبه منحرف (منظور ملعب)
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(topLeftX, fieldTopY);
-    ctx.lineTo(topRightX, fieldTopY);
-    ctx.lineTo(bottomRightX, fieldBottomY);
-    ctx.lineTo(bottomLeftX, fieldBottomY);
-    ctx.closePath();
-    ctx.clip();
-
-    // أرضية خضراء + خطوط عشب رأسية متعرجة حسب المنظور
-    ctx.fillStyle = '#2f6b46';
-    ctx.fillRect(topLeftX - 20, fieldTopY, (topRightX - topLeftX) + 40, fieldHeight);
-    const stripeCount = 10;
-    for(let s = 0; s < stripeCount; s += 2){
-      const topX1 = topLeftX + ((topRightX - topLeftX) / stripeCount) * s;
-      const topX2 = topLeftX + ((topRightX - topLeftX) / stripeCount) * (s + 1);
-      const botX1 = bottomLeftX + ((bottomRightX - bottomLeftX) / stripeCount) * s;
-      const botX2 = bottomLeftX + ((bottomRightX - bottomLeftX) / stripeCount) * (s + 1);
-      ctx.fillStyle = 'rgba(255,255,255,0.05)';
-      ctx.beginPath();
-      ctx.moveTo(topX1, fieldTopY);
-      ctx.lineTo(topX2, fieldTopY);
-      ctx.lineTo(botX2, fieldBottomY);
-      ctx.lineTo(botX1, fieldBottomY);
-      ctx.closePath();
-      ctx.fill();
+    // أرضية خضراء + خطوط عشب رأسية بالتبادل (فاتح/غامق) زي الملاعب الحقيقية
+    const stripeCount = 8;
+    const stripeW = fieldWidth / stripeCount;
+    for(let s = 0; s < stripeCount; s++){
+      ctx.fillStyle = s % 2 === 0 ? '#2f6b46' : '#356f49';
+      ctx.fillRect(fieldLeft + stripeW * s, fieldTopY, stripeW, fieldHeight);
     }
-    ctx.restore();
 
     // حدّ الملعب الأبيض
-    ctx.strokeStyle = 'rgba(250,245,230,0.85)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(topLeftX, fieldTopY);
-    ctx.lineTo(topRightX, fieldTopY);
-    ctx.lineTo(bottomRightX, fieldBottomY);
-    ctx.lineTo(bottomLeftX, fieldBottomY);
-    ctx.closePath();
-    ctx.stroke();
+    ctx.strokeStyle = 'rgba(250,245,230,0.9)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(fieldLeft, fieldTopY, fieldWidth, fieldHeight);
 
-    // دائرة المنتصف عند ارتفاع خط الوسط تقريبًا
-    const midT = 0.55;
-    const midY = lerp(fieldBottomY, fieldTopY, midT);
-    const midLeft = lerp(bottomLeftX, topLeftX, midT);
-    const midRight = lerp(bottomRightX, topRightX, midT);
+    // خط نص الملعب ودائرة المنتصف
+    const midY = fieldTopY + fieldHeight * 0.45;
     ctx.beginPath();
-    ctx.ellipse((midLeft + midRight) / 2, midY, (midRight - midLeft) * 0.14, 20, 0, 0, Math.PI * 2);
+    ctx.moveTo(fieldLeft, midY);
+    ctx.lineTo(fieldRight, midY);
     ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(fieldLeft + fieldWidth / 2, midY, Math.min(38, fieldWidth * 0.16), 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(fieldLeft + fieldWidth / 2, midY, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(250,245,230,0.9)';
+    ctx.fill();
 
     // منطقة الجزاء السفلية (قرب الحارس) + قوس الجزاء
-    const boxT = 0.12;
-    const boxY = lerp(fieldBottomY, fieldTopY, boxT);
-    const boxLeft = lerp(bottomLeftX, topLeftX, boxT);
-    const boxRight = lerp(bottomRightX, topRightX, boxT);
-    const boxCenterX = (boxLeft + boxRight) / 2;
-    const boxHalfW = (boxRight - boxLeft) * 0.32;
+    const boxW = fieldWidth * 0.56;
+    const boxH = fieldHeight * 0.16;
+    const boxLeft = fieldLeft + (fieldWidth - boxW) / 2;
+    const boxTop = fieldBottomY - boxH;
+    ctx.strokeRect(boxLeft, boxTop, boxW, boxH);
+    // منطقة مرمى صغيرة داخل منطقة الجزاء
+    const goalW = boxW * 0.42;
+    const goalH = boxH * 0.45;
+    ctx.strokeRect(fieldLeft + (fieldWidth - goalW) / 2, fieldBottomY - goalH, goalW, goalH);
+    // قوس منطقة الجزاء
     ctx.beginPath();
-    ctx.moveTo(boxCenterX - boxHalfW, fieldBottomY);
-    ctx.lineTo(boxCenterX - boxHalfW, boxY);
-    ctx.lineTo(boxCenterX + boxHalfW, boxY);
-    ctx.lineTo(boxCenterX + boxHalfW, fieldBottomY);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.ellipse(boxCenterX, boxY, boxHalfW * 0.55, 12, 0, Math.PI, Math.PI * 2);
+    ctx.arc(fieldLeft + fieldWidth / 2, boxTop, boxW * 0.24, Math.PI * 0.15, Math.PI * 0.85);
     ctx.stroke();
 
-    // قوس ركنية صغيرة أسفل اليسار
+    // أقواس أركان الملعب
     ctx.beginPath();
-    ctx.arc(bottomLeftX, fieldBottomY, 10, Math.PI * 1.5, Math.PI * 2);
+    ctx.arc(fieldLeft, fieldBottomY, 10, Math.PI * 1.5, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(fieldRight, fieldBottomY, 10, Math.PI, Math.PI * 1.5);
     ctx.stroke();
 
     // دوال مساعدة لحساب موضع لاعب حسب الارتفاع (0 أسفل الحارس، 1 أعلى الملعب)
-    function yAt(t){ return lerp(fieldBottomY, fieldTopY, t); }
-    function xAt(t, frac){
-      const left = lerp(bottomLeftX, topLeftX, t);
-      const right = lerp(bottomRightX, topRightX, t);
-      return left + (right - left) * frac;
-    }
+    function yAt(t){ return fieldBottomY - fieldHeight * t; }
+    function xAt(frac){ return fieldLeft + fieldWidth * frac; }
 
     layout.forEach(row => {
       const n = row.players.length;
@@ -1152,7 +1123,7 @@
       const rowY = yAt(row.t);
       row.players.forEach((p, pi) => {
         const frac = (pi + 1) / (n + 1);
-        const rowX = xAt(row.t, frac);
+        const rowX = xAt(frac);
         drawJersey(ctx, rowX, rowY, p.name, jerseyFill, jerseyOutline, '#faf5e6');
       });
     });
@@ -1218,7 +1189,7 @@
 
     const scale = 2;
     const width = 640;
-    const panelH = 480;
+    const panelH = 520;
     const gap = 18;
     const topPad = 24;
     const height = topPad + panelH * 2 + gap + 24;
