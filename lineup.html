@@ -1006,130 +1006,54 @@
   function lerp(a, b, t){ return a + (b - a) * t; }
 
   // يرسم قميص لاعب مع اسمه تحته، fillColor لون القميص وoutline لون الحدود
-  function drawJersey(ctx, cx, cy, name, fillColor, outlineColor, textColor){
+  // يرسم قميص بسيط بدون رقم (خيار المستخدم: بدون رقم على القميص)
+  function drawJersey(ctx, cx, cy, fillColor, outlineColor){
     ctx.save();
     ctx.translate(cx, cy);
     ctx.fillStyle = fillColor;
     ctx.strokeStyle = outlineColor;
     ctx.lineWidth = 1.6;
     ctx.beginPath();
-    ctx.moveTo(-14, -12);
-    ctx.lineTo(-14, 16);
-    ctx.lineTo(14, 16);
-    ctx.lineTo(14, -12);
-    ctx.lineTo(8, -19);
-    ctx.lineTo(3.5, -13);
-    ctx.lineTo(-3.5, -13);
-    ctx.lineTo(-8, -19);
+    ctx.moveTo(-16, -13);
+    ctx.lineTo(-16, 17);
+    ctx.lineTo(16, 17);
+    ctx.lineTo(16, -13);
+    ctx.lineTo(9, -21);
+    ctx.lineTo(4, -14.5);
+    ctx.lineTo(-4, -14.5);
+    ctx.lineTo(-9, -21);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    // ياقة
     ctx.beginPath();
-    ctx.arc(0, -11, 4, 0, Math.PI, false);
+    ctx.arc(0, -12.5, 4.5, 0, Math.PI, false);
     ctx.strokeStyle = outlineColor;
     ctx.stroke();
     ctx.restore();
+  }
 
-    ctx.fillStyle = textColor;
+  // يرسم صندوق داكن مدوّر تحت القميص فيه اسم اللاعب (زي بطاقات التشكيلة)
+  function drawNameTag(ctx, cx, cy, name){
     ctx.font = '700 13px Tajawal, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'alphabetic';
-    const shortName = name.length > 14 ? name.slice(0, 13) + '…' : name;
-    ctx.fillText(shortName, cx, cy + 36);
-  }
-
-  // يرسم ملعب مستطيل عادي بخطوط عشب وخطوط بيضاء حقيقية، مع حارس + دفاع + وسط + جناح
-  function drawPitchPanel(ctx, x, y, w, h, title, subtitle, layout, jerseyFill, jerseyOutline){
-    // خلفية بطاقة داكنة خفيفة خلف الملعب
-    ctx.fillStyle = '#1f4a30';
-    roundRect(ctx, x, y, w, h, 14);
+    const shortName = name.length > 13 ? name.slice(0, 12) + '…' : name;
+    const textW = ctx.measureText(shortName).width;
+    const boxW = textW + 16;
+    const boxH = 21;
+    roundRect(ctx, cx - boxW / 2, cy - boxH / 2, boxW, boxH, 6);
+    ctx.fillStyle = 'rgba(28,32,26,0.82)';
     ctx.fill();
-
     ctx.fillStyle = '#faf5e6';
-    ctx.font = '900 19px Cairo, sans-serif';
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillText(title, x + w / 2, y + 26);
-    ctx.font = '600 12px Tajawal, sans-serif';
-    ctx.fillStyle = 'rgba(250,245,230,0.8)';
-    ctx.fillText(subtitle, x + w / 2, y + 44);
-
-    const padSide = 16;
-    const fieldTopY = y + 54;
-    const fieldBottomY = y + h - 16;
-    const fieldHeight = fieldBottomY - fieldTopY;
-    const fieldLeft = x + padSide;
-    const fieldRight = x + w - padSide;
-    const fieldWidth = fieldRight - fieldLeft;
-
-    // أرضية خضراء + خطوط عشب رأسية بالتبادل (فاتح/غامق) زي الملاعب الحقيقية
-    const stripeCount = 8;
-    const stripeW = fieldWidth / stripeCount;
-    for(let s = 0; s < stripeCount; s++){
-      ctx.fillStyle = s % 2 === 0 ? '#2f6b46' : '#356f49';
-      ctx.fillRect(fieldLeft + stripeW * s, fieldTopY, stripeW, fieldHeight);
-    }
-
-    // حدّ الملعب الأبيض
-    ctx.strokeStyle = 'rgba(250,245,230,0.9)';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(fieldLeft, fieldTopY, fieldWidth, fieldHeight);
-
-    // خط نص الملعب ودائرة المنتصف
-    const midY = fieldTopY + fieldHeight * 0.45;
-    ctx.beginPath();
-    ctx.moveTo(fieldLeft, midY);
-    ctx.lineTo(fieldRight, midY);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(fieldLeft + fieldWidth / 2, midY, Math.min(38, fieldWidth * 0.16), 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(fieldLeft + fieldWidth / 2, midY, 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(250,245,230,0.9)';
-    ctx.fill();
-
-    // منطقة الجزاء السفلية (قرب الحارس) + قوس الجزاء
-    const boxW = fieldWidth * 0.56;
-    const boxH = fieldHeight * 0.16;
-    const boxLeft = fieldLeft + (fieldWidth - boxW) / 2;
-    const boxTop = fieldBottomY - boxH;
-    ctx.strokeRect(boxLeft, boxTop, boxW, boxH);
-    // منطقة مرمى صغيرة داخل منطقة الجزاء
-    const goalW = boxW * 0.42;
-    const goalH = boxH * 0.45;
-    ctx.strokeRect(fieldLeft + (fieldWidth - goalW) / 2, fieldBottomY - goalH, goalW, goalH);
-    // قوس منطقة الجزاء
-    ctx.beginPath();
-    ctx.arc(fieldLeft + fieldWidth / 2, boxTop, boxW * 0.24, Math.PI * 0.15, Math.PI * 0.85);
-    ctx.stroke();
-
-    // أقواس أركان الملعب
-    ctx.beginPath();
-    ctx.arc(fieldLeft, fieldBottomY, 10, Math.PI * 1.5, Math.PI * 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(fieldRight, fieldBottomY, 10, Math.PI, Math.PI * 1.5);
-    ctx.stroke();
-
-    // دوال مساعدة لحساب موضع لاعب حسب الارتفاع (0 أسفل الحارس، 1 أعلى الملعب)
-    function yAt(t){ return fieldBottomY - fieldHeight * t; }
-    function xAt(frac){ return fieldLeft + fieldWidth * frac; }
-
-    layout.forEach(row => {
-      const n = row.players.length;
-      if(n === 0) return;
-      const rowY = yAt(row.t);
-      row.players.forEach((p, pi) => {
-        const frac = (pi + 1) / (n + 1);
-        const rowX = xAt(frac);
-        drawJersey(ctx, rowX, rowY, p.name, jerseyFill, jerseyOutline, '#faf5e6');
-      });
-    });
+    ctx.textBaseline = 'middle';
+    ctx.fillText(shortName, cx, cy + 1);
   }
 
-  // يبني توزيع الملعب: حارس + ٣ دفاع + ٢ وسط + ٢ جناح، والفائض يصير حارس أو يتوزع
+  function drawPlayerWithTag(ctx, cx, cy, name, fillColor, outlineColor){
+    drawJersey(ctx, cx, cy, fillColor, outlineColor);
+    drawNameTag(ctx, cx, cy + 34, name);
+  }
+
+  // يبني توزيع نصف الملعب: حارس + ٣ دفاع + ٢ وسط + ٢ جناح، والفائض يصير حارس أو يتوزع
   function teamLayoutForPitch(list){
     const byPos = { 'دفاع': [], 'وسط': [], 'جناح': [] };
     const other = [];
@@ -1161,11 +1085,114 @@
     });
 
     return [
-      { t: 0.06, players: gk ? [gk] : [] },
-      { t: 0.28, players: byPos['دفاع'] },
-      { t: 0.55, players: byPos['وسط'] },
-      { t: 0.85, players: byPos['جناح'] }
+      { t: 0.07, players: gk ? [gk] : [] },
+      { t: 0.30, players: byPos['دفاع'] },
+      { t: 0.58, players: byPos['وسط'] },
+      { t: 0.86, players: byPos['جناح'] }
     ];
+  }
+
+  // يرسم ملعب أفقي واحد بالفريقين وجه لوجه (زي بطاقات التشكيلات المعروفة)
+  function drawFacingPitch(ctx, x, y, w, h, layoutA, layoutB, colorA, outlineA, colorB, outlineB, gkColor, gkOutline, labelA, labelB){
+    // خلفية الملعب الخضراء
+    roundRect(ctx, x, y, w, h, 10);
+    ctx.fillStyle = '#2f6b46';
+    ctx.fill();
+
+    const pad = 18;
+    const fieldLeft = x + pad;
+    const fieldRight = x + w - pad;
+    const fieldTop = y + pad;
+    const fieldBottom = y + h - pad;
+    const fieldWidth = fieldRight - fieldLeft;
+    const fieldHeight = fieldBottom - fieldTop;
+    const fieldMidX = fieldLeft + fieldWidth / 2;
+    const fieldMidY = fieldTop + fieldHeight / 2;
+
+    // حدّ الملعب
+    ctx.strokeStyle = 'rgba(250,245,230,0.95)';
+    ctx.lineWidth = 2.2;
+    ctx.strokeRect(fieldLeft, fieldTop, fieldWidth, fieldHeight);
+
+    // خط المنتصف العمودي ودائرة المنتصف
+    ctx.beginPath();
+    ctx.moveTo(fieldMidX, fieldTop);
+    ctx.lineTo(fieldMidX, fieldBottom);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(fieldMidX, fieldMidY, Math.min(48, fieldHeight * 0.22), 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(fieldMidX, fieldMidY, 3, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(250,245,230,0.95)';
+    ctx.fill();
+
+    // منطقتا الجزاء يمين ويسار + مرمى صغير + قوس
+    const boxW = fieldWidth * 0.13;
+    const boxH = fieldHeight * 0.5;
+    const goalW = boxW * 0.5;
+    const goalH = fieldHeight * 0.24;
+
+    // يسار (حارس الفريق الأول)
+    ctx.strokeRect(fieldLeft, fieldMidY - boxH / 2, boxW, boxH);
+    ctx.strokeRect(fieldLeft, fieldMidY - goalH / 2, goalW, goalH);
+    ctx.beginPath();
+    ctx.arc(fieldLeft + boxW, fieldMidY, boxH * 0.22, Math.PI * 0.62, Math.PI * 1.38);
+    ctx.stroke();
+
+    // يمين (حارس الفريق الثاني)
+    ctx.strokeRect(fieldRight - boxW, fieldMidY - boxH / 2, boxW, boxH);
+    ctx.strokeRect(fieldRight - goalW, fieldMidY - goalH / 2, goalW, goalH);
+    ctx.beginPath();
+    ctx.arc(fieldRight - boxW, fieldMidY, boxH * 0.22, Math.PI * 1.62, Math.PI * 2.38);
+    ctx.stroke();
+
+    // أقواس الأركان الأربعة
+    const cr = 9;
+    ctx.beginPath(); ctx.arc(fieldLeft, fieldTop, cr, 0, Math.PI * 0.5); ctx.stroke();
+    ctx.beginPath(); ctx.arc(fieldRight, fieldTop, cr, Math.PI * 0.5, Math.PI); ctx.stroke();
+    ctx.beginPath(); ctx.arc(fieldLeft, fieldBottom, cr, Math.PI * 1.5, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(fieldRight, fieldBottom, cr, Math.PI, Math.PI * 1.5); ctx.stroke();
+
+    // دوال حساب موضع اللاعب: يسار من الحارس (0) للمنتصف (1)، ومرآتها لليمين
+    function xAtLeft(t){ return fieldLeft + fieldWidth * (t * 0.46); }
+    function xAtRight(t){ return fieldRight - fieldWidth * (t * 0.46); }
+    function yAt(frac){ return fieldTop + fieldHeight * frac; }
+
+    layoutA.forEach((row, ri) => {
+      const n = row.players.length;
+      if(n === 0) return;
+      const rowX = ri === 0 ? fieldLeft + boxW * 0.55 : xAtLeft(row.t);
+      row.players.forEach((p, pi) => {
+        const frac = (pi + 1) / (n + 1);
+        const py = yAt(frac);
+        const fill = ri === 0 ? gkColor : colorA;
+        const outline = ri === 0 ? gkOutline : outlineA;
+        drawPlayerWithTag(ctx, rowX, py, p.name, fill, outline);
+      });
+    });
+
+    layoutB.forEach((row, ri) => {
+      const n = row.players.length;
+      if(n === 0) return;
+      const rowX = ri === 0 ? fieldRight - boxW * 0.55 : xAtRight(row.t);
+      row.players.forEach((p, pi) => {
+        const frac = (pi + 1) / (n + 1);
+        const py = yAt(frac);
+        const fill = ri === 0 ? gkColor : colorB;
+        const outline = ri === 0 ? gkOutline : outlineB;
+        drawPlayerWithTag(ctx, rowX, py, p.name, fill, outline);
+      });
+    });
+
+    // تسمية بسيطة لكل فريق بزاوية الملعب العلوية
+    ctx.font = '900 13px Cairo, sans-serif';
+    ctx.fillStyle = 'rgba(250,245,230,0.9)';
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left';
+    ctx.fillText(labelA, fieldLeft + 4, fieldTop - 6);
+    ctx.textAlign = 'right';
+    ctx.fillText(labelB, fieldRight - 4, fieldTop - 6);
   }
 
   async function saveTeamsAsImage(){
@@ -1181,18 +1208,15 @@
 
     try{
       await Promise.all([
-        document.fonts.load('900 19px Cairo'),
-        document.fonts.load('700 10.5px Tajawal'),
-        document.fonts.load('600 12px Tajawal')
+        document.fonts.load('900 13px Cairo'),
+        document.fonts.load('700 13px Tajawal')
       ]);
     } catch(e){ /* تجاهل، بيرسم بالخط الاحتياطي لو صار خلل */ }
 
     const scale = 2;
-    const width = 640;
-    const panelH = 520;
-    const gap = 18;
-    const topPad = 24;
-    const height = topPad + panelH * 2 + gap + 24;
+    const width = 1100;
+    const height = 640;
+    const pad = 20;
 
     const canvas = document.createElement('canvas');
     canvas.width = width * scale;
@@ -1203,20 +1227,14 @@
     ctx.fillStyle = '#f1e8d3';
     ctx.fillRect(0, 0, width, height);
 
-    const avgSkill = (list) => list.length
-      ? (list.reduce((s, i) => s + getSkill(i), 0) / list.length).toFixed(1)
-      : '0';
-
-    // الفريق الأول: قمصان بيضاء. الفريق الثاني: قمصان سوداء
-    drawPitchPanel(
-      ctx, 20, topPad, width - 40, panelH,
-      'الفريق الأول', `متوسط المهارة ${toArabicNum(avgSkill(teamA))}`,
-      teamLayoutForPitch(teamA), '#faf5e6', '#3a2f21'
-    );
-    drawPitchPanel(
-      ctx, 20, topPad + panelH + gap, width - 40, panelH,
-      'الفريق الثاني', `متوسط المهارة ${toArabicNum(avgSkill(teamB))}`,
-      teamLayoutForPitch(teamB), '#2b241c', '#faf5e6'
+    // الفريق الأول: قمصان بيضاء. الفريق الثاني: قمصان سماوية فاتحة. الحراس صفراء لكلا الفريقين
+    drawFacingPitch(
+      ctx, pad, pad, width - pad * 2, height - pad * 2,
+      teamLayoutForPitch(teamA), teamLayoutForPitch(teamB),
+      '#faf5e6', '#3a2f21',
+      '#7ec1e8', '#1c3a52',
+      '#f2c94c', '#5c4a10',
+      'الفريق الأول', 'الفريق الثاني'
     );
 
     canvas.toBlob((blob) => {
