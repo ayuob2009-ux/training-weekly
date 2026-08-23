@@ -307,6 +307,19 @@
     transition: all .15s ease;
   }
   .edit-name-btn:hover{ background: rgba(58,47,33,0.08); color: var(--chalk); }
+  .delete-name-btn{
+    flex:none;
+    width:24px; height:24px;
+    border:none;
+    background:transparent;
+    color: var(--chalk-dim);
+    cursor:pointer;
+    font-size:13px;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:6px;
+    transition: all .15s ease;
+  }
+  .delete-name-btn:hover{ background: rgba(179,57,47,0.12); color: var(--red-card); }
   .name-edit-input{
     flex:1;
     font-family:'Tajawal', sans-serif;
@@ -771,68 +784,7 @@
     await waitForDoc();
     applyRemoteState();
 
-    container.innerHTML = '';
-
-    if(players.length === 0){
-      container.innerHTML = '<div class="empty">مافيه أسماء. الصق الأسماء فوق أول.</div>';
-    } else {
-      players.forEach((name, i) => {
-        const row = document.createElement('div');
-        row.className = 'row';
-        row.dataset.index = i;
-
-        const posBtns = POSITIONS.map(p => {
-          const isActive = positionMap[i] === p;
-          return `<button type="button" class="pos-btn${isActive ? ' active' : ''}" data-pos="${p}">${p}</button>`;
-        }).join('');
-
-        const currentSkill = skillMap[i] || '';
-        const skillOptions = ['<option value="">م-</option>']
-          .concat([1,2,3,4,5,6,7,8,9,10].map(n =>
-            `<option value="${n}"${String(n) === currentSkill ? ' selected' : ''}>${n}</option>`
-          )).join('');
-
-        row.innerHTML = `
-          <div class="row-main" role="checkbox" aria-checked="false" tabindex="0">
-            <div class="checkbox">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#1f4a30" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="name">${escapeHtml(name)}</div>
-            <button type="button" class="edit-name-btn" aria-label="تعديل اسم ${escapeHtml(name)}">✎</button>
-            <div class="badge" style="display:none"></div>
-          </div>
-          <div class="row-controls">
-            <div class="positions">${posBtns}</div>
-            <select class="skill-select" aria-label="مهارة ${escapeHtml(name)}">${skillOptions}</select>
-          </div>
-        `;
-
-        const rowMain = row.querySelector('.row-main');
-        rowMain.addEventListener('click', () => toggle(i));
-        rowMain.addEventListener('keydown', (e) => {
-          if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggle(i); }
-        });
-
-        row.querySelector('.edit-name-btn').addEventListener('click', (e) => {
-          e.stopPropagation();
-          startEditName(i, row);
-        });
-
-        row.querySelectorAll('.pos-btn').forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            setPosition(i, btn.dataset.pos, row);
-          });
-        });
-
-        row.querySelector('.skill-select').addEventListener('click', (e) => e.stopPropagation());
-        row.querySelector('.skill-select').addEventListener('change', (e) => {
-          setSkill(i, e.target.value);
-        });
-
-        container.appendChild(row);
-      });
-    }
+    buildRowsDOM();
 
     // طبّق الاختيار المشترك الحالي بعد ما الصفوف صارت جاهزة
     renderRows();
@@ -842,6 +794,81 @@
     updateScoreboard();
     updateResult();
     document.getElementById('listSection').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  // يبني صفوف اللاعبين بالحاوية اعتمادًا على حالة players/positionMap/skillMap
+  // الحالية محليًا، بدون أي جلب أو مزامنة (يُستخدم بعد التوليد الأول وبعد الحذف)
+  function buildRowsDOM(){
+    const container = document.getElementById('rowsContainer');
+    container.innerHTML = '';
+
+    if(players.length === 0){
+      container.innerHTML = '<div class="empty">مافيه أسماء. الصق الأسماء فوق أول.</div>';
+      return;
+    }
+
+    players.forEach((name, i) => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.dataset.index = i;
+
+      const posBtns = POSITIONS.map(p => {
+        const isActive = positionMap[i] === p;
+        return `<button type="button" class="pos-btn${isActive ? ' active' : ''}" data-pos="${p}">${p}</button>`;
+      }).join('');
+
+      const currentSkill = skillMap[i] || '';
+      const skillOptions = ['<option value="">م-</option>']
+        .concat([1,2,3,4,5,6,7,8,9,10].map(n =>
+          `<option value="${n}"${String(n) === currentSkill ? ' selected' : ''}>${n}</option>`
+        )).join('');
+
+      row.innerHTML = `
+        <div class="row-main" role="checkbox" aria-checked="false" tabindex="0">
+          <div class="checkbox">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#1f4a30" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="name">${escapeHtml(name)}</div>
+          <button type="button" class="edit-name-btn" aria-label="تعديل اسم ${escapeHtml(name)}">✎</button>
+          <button type="button" class="delete-name-btn" aria-label="حذف ${escapeHtml(name)}">🗑</button>
+          <div class="badge" style="display:none"></div>
+        </div>
+        <div class="row-controls">
+          <div class="positions">${posBtns}</div>
+          <select class="skill-select" aria-label="مهارة ${escapeHtml(name)}">${skillOptions}</select>
+        </div>
+      `;
+
+      const rowMain = row.querySelector('.row-main');
+      rowMain.addEventListener('click', () => toggle(i));
+      rowMain.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggle(i); }
+      });
+
+      row.querySelector('.edit-name-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        startEditName(i, row);
+      });
+
+      row.querySelector('.delete-name-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        confirmDeletePlayer(i);
+      });
+
+      row.querySelectorAll('.pos-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          setPosition(i, btn.dataset.pos, row);
+        });
+      });
+
+      row.querySelector('.skill-select').addEventListener('click', (e) => e.stopPropagation());
+      row.querySelector('.skill-select').addEventListener('change', (e) => {
+        setSkill(i, e.target.value);
+      });
+
+      container.appendChild(row);
+    });
   }
 
   // يفتح حقل تعديل اسم اللاعب مكان النص، ويحفظ عند الضغط إنتر أو الخروج منه
@@ -914,6 +941,66 @@
     if(editBtn) editBtn.setAttribute('aria-label', 'تعديل اسم ' + newName);
 
     updateResult();
+  }
+
+  // يسأل تأكيد قبل الحذف لأنه إجراء نهائي (اسم + مركز + مهارة)
+  function confirmDeletePlayer(i){
+    const name = players[i];
+    if(!name) return;
+    const ok = window.confirm(`متأكد تبي تحذف "${name}"؟ بيحذف اسمه ومركزه ومهارته نهائيًا، ويظل رصيده بجدول الترتيب زي ما هو.`);
+    if(ok) deletePlayer(i);
+  }
+
+  // يحذف لاعب بالكامل من القائمة، ويصحح فهارس كل من بعده تلقائيًا
+  // (عشان ما تصير نفس مشكلة تزحزح المراكز والمهارات)
+  function deletePlayer(i){
+    players.splice(i, 1);
+
+    // تصحيح المراكز والمهارات: من كان قبله يبقى كما هو، ومن كان بعده يرجع خانة للخلف
+    function shiftMapAfterDelete(oldMap){
+      const fixed = {};
+      for(const key in oldMap){
+        const idx = Number(key);
+        if(idx === i) continue; // نحذف بيانات اللاعب المحذوف نفسه
+        if(idx < i){ fixed[idx] = oldMap[key]; }
+        else { fixed[idx - 1] = oldMap[key]; }
+      }
+      return fixed;
+    }
+    positionMap = shiftMapAfterDelete(positionMap);
+    skillMap = shiftMapAfterDelete(skillMap);
+
+    // تصحيح الاختيار الحالي بنفس الطريقة
+    const newSelected = new Set();
+    selected.forEach(idx => {
+      if(idx === i) return;
+      newSelected.add(idx < i ? idx : idx - 1);
+    });
+    selected = newSelected;
+
+    const rawText = players.join('\n');
+    const textarea = document.getElementById('namesInput');
+    if(textarea) textarea.value = rawText;
+
+    persist({
+      names: rawText,
+      positions: positionMap,
+      skills: skillMap,
+      selected: [...selected]
+    });
+
+    buildRowsDOM();
+    renderRows();
+    syncRowControls();
+    reorderRows();
+    updateScoreboard();
+    updateResult();
+
+    const toast = document.getElementById('toast');
+    const original = toast.textContent;
+    toast.textContent = 'تم حذف اللاعب ✓';
+    toast.classList.add('show');
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => { toast.textContent = original; }, 300); }, 1600);
   }
 
   function setPosition(i, pos, row){
