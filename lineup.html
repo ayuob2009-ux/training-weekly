@@ -507,8 +507,15 @@
     display:inline-flex;
     align-items:center;
     justify-content:center;
+    flex:none;
   }
-  .player-name{ font-size:15px; }
+  .player-row-cell{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .player-name{ font-size:15px; flex:1; }
+  .ranking-delete-btn{ margin-right:auto; }
   td.center{ text-align:center; }
 
   .stat-input{
@@ -1621,8 +1628,11 @@
     tbody.innerHTML = rows.map((r, idx) => `
       <tr data-key="${escapeHtml(r.key)}">
         <td>
-          <span class="rank-badge">${idx+1}</span>
-          <span class="player-name">${escapeHtml(r.name)}</span>
+          <div class="player-row-cell">
+            <span class="rank-badge">${idx+1}</span>
+            <span class="player-name">${escapeHtml(r.name)}</span>
+            <button type="button" class="delete-name-btn ranking-delete-btn" aria-label="حذف ${escapeHtml(r.name)} من الترتيب">🗑</button>
+          </div>
         </td>
         <td class="center">
           <input type="number" min="0" class="stat-input played-input" value="${r.played}">
@@ -1635,13 +1645,37 @@
 
     tbody.querySelectorAll('tr').forEach(tr => {
       const key = tr.dataset.key;
+      const name = tr.querySelector('.player-name').textContent;
       tr.querySelector('.played-input').addEventListener('change', (e) => {
         updateRankingStat(key, 'played', e.target.value);
       });
       tr.querySelector('.points-input').addEventListener('change', (e) => {
         updateRankingStat(key, 'points', e.target.value);
       });
+      tr.querySelector('.ranking-delete-btn').addEventListener('click', () => {
+        confirmDeleteRankingEntry(key, name);
+      });
     });
+  }
+
+  // يسأل تأكيد قبل حذف صف لاعب من جدول الترتيب (يمسح رصيد لعب/نقاط نهائيًا)
+  function confirmDeleteRankingEntry(key, name){
+    const ok = window.confirm(`متأكد تبي تحذف "${name}" من جدول الترتيب؟ بيمسح رصيده (لعب/نقاط) نهائيًا.`);
+    if(ok) deleteRankingEntry(key);
+  }
+
+  function deleteRankingEntry(key){
+    const updated = { ...statsMap };
+    delete updated[key];
+    statsMap = updated;
+    setDoc(statsRef, { players: updated }, { merge: true }).catch(() => notifyStorageIssue());
+    renderRanking();
+
+    const toast = document.getElementById('toast');
+    const original = toast.textContent;
+    toast.textContent = 'تم حذف اللاعب من الترتيب ✓';
+    toast.classList.add('show');
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => { toast.textContent = original; }, 300); }, 1600);
   }
 
   function updateRankingStat(key, field, value){
