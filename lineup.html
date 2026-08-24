@@ -70,7 +70,7 @@
     gap:8px;
     margin-bottom:18px;
   }
-  .top-nav a{
+  .top-nav button{
     font-family:'Cairo', sans-serif;
     font-size:13px;
     font-weight:700;
@@ -81,9 +81,10 @@
     padding:8px 18px;
     border-radius:999px;
     transition: all .15s ease;
+    cursor:pointer;
   }
-  .top-nav a:hover{ color: var(--chalk); border-color: var(--chalk-dim); }
-  .top-nav a.active{
+  .top-nav button:hover{ color: var(--chalk); border-color: var(--chalk-dim); }
+  .top-nav button.active{
     color: var(--cream);
     background: var(--pitch-dark);
     border-color: var(--pitch-dark);
@@ -466,14 +467,77 @@
     font-size:14px;
     padding:20px 0;
   }
+
+  /* ===== أنماط خاصة بصفحة الترتيب (view-ranking) ===== */
+  #view-ranking{ display:none; }
+  table{
+    width:100%;
+    border-collapse:collapse;
+  }
+  thead th{
+    font-family:'Cairo', sans-serif;
+    font-size:12.5px;
+    font-weight:700;
+    color: var(--chalk-dim);
+    text-align:right;
+    padding:0 8px 10px;
+    border-bottom:1px solid var(--line);
+  }
+  thead th.center{ text-align:center; }
+  tbody td{
+    padding:10px 8px;
+    border-bottom:1px solid var(--line);
+    font-size:15px;
+    vertical-align:middle;
+  }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:nth-child(1) .rank-badge{ background: var(--gold-fill); color: var(--pitch-dark); }
+  tbody tr:nth-child(2) .rank-badge{ background: #cfd3c8; color: var(--pitch-dark); }
+  tbody tr:nth-child(3) .rank-badge{ background: #cd8a4f; color: var(--pitch-dark); }
+
+  .rank-badge{
+    font-family:'Cairo', sans-serif;
+    font-weight:900;
+    font-size:13px;
+    color: var(--cream);
+    background: var(--chalk-dim);
+    min-width:26px;
+    height:26px;
+    border-radius:50%;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .player-name{ font-size:15px; }
+  td.center{ text-align:center; }
+
+  .stat-input{
+    width:52px;
+    text-align:center;
+    font-family:'Cairo', sans-serif;
+    font-weight:700;
+    font-size:14px;
+    background: rgba(58,47,33,0.05);
+    border: 1px solid var(--line);
+    border-radius:8px;
+    color: var(--chalk);
+    padding:5px 4px;
+  }
+  .stat-input:focus{
+    outline: 2px solid var(--gold);
+    outline-offset: 1px;
+    border-color: var(--gold);
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="top-nav">
-    <a href="lineup.html" class="active">التشكيلة</a>
-    <a href="ranking.html">الترتيب</a>
+    <button type="button" class="active" data-view="lineup" onclick="switchView('lineup')">التشكيلة</button>
+    <button type="button" data-view="ranking" onclick="switchView('ranking')">الترتيب</button>
   </div>
+
+  <div id="view-lineup">
   <header>
     <div class="eyebrow">تمرين أيوب</div>
     <h1>تشكيلة الأسبوع</h1>
@@ -533,6 +597,33 @@
         <button class="secondary" onclick="recordResult('draw')">تعادل</button>
       </div>
       <div class="hint" id="winnerStatus"></div>
+    </div>
+  </div>
+  </div>
+
+  <div id="view-ranking">
+    <header>
+      <div class="eyebrow">موسم الأسبوعيات</div>
+      <h1>الترتيب</h1>
+      <div class="sub">نقاط الفوز لكل لاعب — ٥ للفوز، ٢ للتعادل، صفر للخسارة</div>
+    </header>
+
+    <div class="card">
+      <h2>جدول اللاعبين</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>اللاعب</th>
+            <th class="center">لعب</th>
+            <th class="center">النقاط</th>
+          </tr>
+        </thead>
+        <tbody id="rankingBody"></tbody>
+      </table>
+      <div class="empty" id="rankingEmptyState" style="display:none">مافيه لاعبين بعد. أضف أسماء من تبويب التشكيلة أول.</div>
+      <div class="actions">
+        <button class="secondary" onclick="saveRankingAsImage()">حفظ كصورة (أفضل ٢٠)</button>
+      </div>
     </div>
   </div>
 </div>
@@ -744,6 +835,8 @@
       generateList();
     }
 
+    renderRanking();
+
     if(!docLoaded){
       docLoaded = true;
       resolveDocReady();
@@ -759,6 +852,7 @@
   onSnapshot(statsRef, (snap) => {
     const data = snap.exists() ? snap.data() : {};
     statsMap = { ...(data.players || {}) };
+    renderRanking();
   }, () => {
     notifyStorageIssue();
   });
@@ -1484,12 +1578,241 @@
     return div.innerHTML;
   }
 
+  // ===== منطق تبويب الترتيب (view-ranking) — يستخدم نفس players وstatsMap =====
+  let lastRankingRows = [];
+  let rankingSaveTimer = null;
+
+  function switchView(view){
+    document.getElementById('view-lineup').style.display = view === 'lineup' ? 'block' : 'none';
+    document.getElementById('view-ranking').style.display = view === 'ranking' ? 'block' : 'none';
+    document.querySelectorAll('.top-nav button').forEach(b => {
+      b.classList.toggle('active', b.dataset.view === view);
+    });
+    if(view === 'ranking') renderRanking();
+  }
+
+  function allPlayerNamesForRanking(){
+    const set = new Map(); // normalized -> display name
+    players.forEach(n => set.set(normalize(n), n));
+    Object.keys(statsMap).forEach(k => { if(!set.has(k)) set.set(k, k); });
+    return [...set.entries()];
+  }
+
+  function renderRanking(){
+    const tbody = document.getElementById('rankingBody');
+    const emptyState = document.getElementById('rankingEmptyState');
+    if(!tbody || !emptyState) return;
+
+    const rows = allPlayerNamesForRanking().map(([key, name]) => {
+      const stat = statsMap[key] || { played: 0, points: 0 };
+      return { key, name, played: stat.played || 0, points: stat.points || 0 };
+    });
+    rows.sort((a, b) => b.points - a.points || b.played - a.played);
+    lastRankingRows = rows;
+
+    if(rows.length === 0){
+      tbody.innerHTML = '';
+      emptyState.style.display = 'block';
+      return;
+    }
+    emptyState.style.display = 'none';
+
+    tbody.innerHTML = rows.map((r, idx) => `
+      <tr data-key="${escapeHtml(r.key)}">
+        <td>
+          <span class="rank-badge">${idx+1}</span>
+          <span class="player-name">${escapeHtml(r.name)}</span>
+        </td>
+        <td class="center">
+          <input type="number" min="0" class="stat-input played-input" value="${r.played}">
+        </td>
+        <td class="center">
+          <input type="number" min="0" class="stat-input points-input" value="${r.points}">
+        </td>
+      </tr>
+    `).join('');
+
+    tbody.querySelectorAll('tr').forEach(tr => {
+      const key = tr.dataset.key;
+      tr.querySelector('.played-input').addEventListener('change', (e) => {
+        updateRankingStat(key, 'played', e.target.value);
+      });
+      tr.querySelector('.points-input').addEventListener('change', (e) => {
+        updateRankingStat(key, 'points', e.target.value);
+      });
+    });
+  }
+
+  function updateRankingStat(key, field, value){
+    const num = Math.max(0, parseInt(value, 10) || 0);
+    const current = statsMap[key] || { played: 0, points: 0 };
+    statsMap[key] = { ...current, [field]: num };
+    scheduleRankingSave();
+  }
+
+  function scheduleRankingSave(){
+    if(rankingSaveTimer) clearTimeout(rankingSaveTimer);
+    rankingSaveTimer = setTimeout(async () => {
+      try{
+        await setDoc(statsRef, { players: statsMap }, { merge: true });
+        const toast = document.getElementById('toast');
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 1400);
+      } catch(err){
+        notifyStorageIssue();
+      }
+    }, 500);
+  }
+
+  // يرسم أفضل ٢٠ لاعب على كانفاس وينزّله كصورة PNG
+  async function saveRankingAsImage(){
+    const rows = lastRankingRows.slice(0, 20);
+    if(rows.length === 0){
+      const toast = document.getElementById('toast');
+      const original = toast.textContent;
+      toast.textContent = 'مافيه بيانات ترتيب بعد';
+      toast.classList.add('show');
+      setTimeout(() => { toast.classList.remove('show'); setTimeout(()=>{ toast.textContent = original; }, 300); }, 1800);
+      return;
+    }
+
+    try{
+      await Promise.all([
+        document.fonts.load('900 22px Cairo'),
+        document.fonts.load('700 12px Cairo'),
+        document.fonts.load('900 12.5px Cairo'),
+        document.fonts.load('600 16px Tajawal')
+      ]);
+    } catch(e){ /* تجاهل، بيرسم بالخط الاحتياطي لو صار خلل */ }
+
+    const scale = 2;
+    const margin = 24;
+    const badgeSpace = 38;
+    const playedColW = 62;
+    const pointsColW = 74;
+    const colGap = 16;
+    const headerHeight = 130;
+    const rowHeight = 46;
+    const footerHeight = 26;
+    const height = headerHeight + rows.length * rowHeight + footerHeight;
+
+    const measureCanvas = document.createElement('canvas');
+    const mctx = measureCanvas.getContext('2d');
+    mctx.font = '600 16px Tajawal, sans-serif';
+    let maxNameWidth = 90;
+    rows.forEach(r => {
+      const w = mctx.measureText(r.name).width;
+      if(w > maxNameWidth) maxNameWidth = w;
+    });
+    const nameColW = Math.min(maxNameWidth + 8, 260);
+
+    const contentWidth = badgeSpace + nameColW + colGap + playedColW + colGap + pointsColW;
+    const width = contentWidth + margin * 2;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+
+    ctx.fillStyle = '#f1e8d3';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = 'rgba(250,245,230,0.9)';
+    roundRect(ctx, 16, 16, width - 32, height - 32, 16);
+    ctx.fill();
+
+    ctx.fillStyle = '#1f4a30';
+    ctx.font = '900 22px Cairo, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('الترتيب — أفضل ٢٠ لاعب', width / 2, 48);
+
+    ctx.fillStyle = '#8a7a63';
+    ctx.font = '600 12.5px Tajawal, sans-serif';
+    ctx.fillText('نقاط الفوز الأسبوعية', width / 2, 68);
+
+    const rightEdge = width - margin;
+    const badgeCxBase = rightEdge - 14;
+    const nameRightX = badgeCxBase - 14 - 10;
+    const nameLeftX = nameRightX - nameColW;
+    const playedCx = nameLeftX - colGap - playedColW / 2;
+    const pointsCx = playedCx - playedColW / 2 - colGap - pointsColW / 2;
+
+    const colY = 100;
+    ctx.font = '700 12px Cairo, sans-serif';
+    ctx.fillStyle = '#8a7a63';
+    ctx.textAlign = 'right';
+    ctx.fillText('اللاعب', nameRightX, colY);
+    ctx.textAlign = 'center';
+    ctx.fillText('لعب', playedCx, colY);
+    ctx.fillText('النقاط', pointsCx, colY);
+
+    ctx.strokeStyle = 'rgba(58,47,33,0.16)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(margin + 6, colY + 10);
+    ctx.lineTo(width - margin - 6, colY + 10);
+    ctx.stroke();
+
+    const badgeColors = ['#d9a441', '#cfd3c8', '#cd8a4f'];
+    rows.forEach((r, idx) => {
+      const y = headerHeight + idx * rowHeight;
+      if(idx % 2 === 1){
+        ctx.fillStyle = 'rgba(58,47,33,0.035)';
+        ctx.fillRect(margin, y, width - margin * 2, rowHeight);
+      }
+      const badgeCy = y + rowHeight / 2;
+      ctx.beginPath();
+      ctx.arc(badgeCxBase, badgeCy, 14, 0, Math.PI * 2);
+      ctx.fillStyle = idx < 3 ? badgeColors[idx] : 'rgba(58,47,33,0.12)';
+      ctx.fill();
+      ctx.fillStyle = idx < 3 ? '#1f4a30' : '#8a7a63';
+      ctx.font = '900 12.5px Cairo, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(idx + 1), badgeCxBase, badgeCy + 1);
+
+      ctx.fillStyle = '#3a2f21';
+      ctx.font = '600 16px Tajawal, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(r.name, nameRightX, badgeCy);
+
+      ctx.fillStyle = '#3a2f21';
+      ctx.font = '700 15px Cairo, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(String(r.played), playedCx, badgeCy);
+
+      ctx.fillStyle = '#c8892c';
+      ctx.font = '900 17px Cairo, sans-serif';
+      ctx.fillText(String(r.points), pointsCx, badgeCy);
+    });
+    ctx.textBaseline = 'alphabetic';
+
+    canvas.toBlob((blob) => {
+      if(!blob){ notifyStorageIssue(); return; }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ترتيب-اللاعبين.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1600);
+    }, 'image/png');
+  }
+
   window.generateList = generateList;
   window.copyList = copyList;
   window.resetAll = resetAll;
   window.recordResult = recordResult;
   window.reshuffleTeams = reshuffleTeams;
   window.saveTeamsAsImage = saveTeamsAsImage;
+  window.switchView = switchView;
+  window.saveRankingAsImage = saveRankingAsImage;
 </script>
 </body>
 </html>
