@@ -627,7 +627,7 @@
         </thead>
         <tbody id="rankingBody"></tbody>
       </table>
-      <div class="empty" id="rankingEmptyState" style="display:none">مافيه لاعبين بعد. أضف أسماء من تبويب التشكيلة أول.</div>
+      <div class="empty" id="rankingEmptyState" style="display:none">مافيه نتائج مسجلة بعد. سجّل نتيجة أول مباراة من تبويب التشكيلة.</div>
       <div class="actions">
         <button class="secondary" onclick="saveRankingAsImage()">حفظ كصورة (أفضل ٢٠)</button>
       </div>
@@ -1600,10 +1600,10 @@
   }
 
   function allPlayerNamesForRanking(){
-    const set = new Map(); // normalized -> display name
-    players.forEach(n => set.set(normalize(n), n));
-    Object.keys(statsMap).forEach(k => { if(!set.has(k)) set.set(k, k); });
-    return [...set.entries()];
+    // يعرض بس اللاعبين اللي فعليًا سجّلنا لهم نتيجة (موجودين برصيد Firestore)،
+    // مو كل اللي بقائمة الأسماء — عشان لو حذفت لاعب من الترتيب ما يرجع تلقائيًا
+    const nameByKey = new Map(players.map(n => [normalize(n), n]));
+    return Object.keys(statsMap).map(key => [key, nameByKey.get(key) || key]);
   }
 
   function renderRanking(){
