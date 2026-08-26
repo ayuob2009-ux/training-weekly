@@ -639,7 +639,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
   // بيانات مشروعك في Firebase — مشتركة بينك وبين أخوك
   const firebaseConfig = {
@@ -742,11 +742,31 @@
     return result;
   }
 
+  // نستخدم updateDoc عشان يستبدل قيمة الحقل بالكامل بدل ما يدمجها مع القديم
+  // (setDoc مع merge:true يدمج الخرائط المتداخلة، فلا يحذف مفاتيح انحذفت محليًا)
   async function persist(partial){
     try{
-      await setDoc(sharedRef, partial, { merge: true });
+      await updateDoc(sharedRef, partial);
     } catch(err){
-      notifyStorageIssue();
+      // أول مرة يُنشأ فيها المستند، updateDoc يفشل لأنه غير موجود بعد
+      try{
+        await setDoc(sharedRef, partial, { merge: true });
+      } catch(err2){
+        notifyStorageIssue();
+      }
+    }
+  }
+
+  // نفس فكرة persist بس لوثيقة الإحصائيات (تضمن حذف أي لاعب بشكل نهائي فعلي)
+  async function persistStats(playersObj){
+    try{
+      await updateDoc(statsRef, { players: playersObj });
+    } catch(err){
+      try{
+        await setDoc(statsRef, { players: playersObj }, { merge: true });
+      } catch(err2){
+        notifyStorageIssue();
+      }
     }
   }
 
@@ -1033,7 +1053,7 @@
         points: existingNew.points + oldStat.points
       };
       statsMap = updated;
-      setDoc(statsRef, { players: updated }, { merge: true }).catch(() => notifyStorageIssue());
+      persistStats(updated);
     }
 
     const skillSel = document.querySelector(`.row[data-index="${i}"] .skill-select`);
@@ -1568,16 +1588,10 @@
       label = winner === 'A' ? 'فوز الفريق الأول' : 'فوز الفريق الثاني';
     }
 
-    try{
-      await setDoc(statsRef, { players: updated }, { merge: true });
-      statsMap = updated;
-      if(status) status.textContent = `تم تسجيل ${label} ✓ — الترتيب اتحدث`;
-    } catch(err){
-      notifyStorageIssue();
-      if(status) status.textContent = 'تعذر تسجيل النتيجة، حاول مرة ثانية';
-    } finally {
-      resultRecording = false;
-    }
+    await persistStats(updated);
+    statsMap = updated;
+    if(status) status.textContent = `تم تسجيل ${label} ✓ — الترتيب اتحدث`;
+    resultRecording = false;
   }
 
   function escapeHtml(str){
@@ -1670,7 +1684,7 @@
     const updated = { ...statsMap };
     delete updated[key];
     statsMap = updated;
-    setDoc(statsRef, { players: updated }, { merge: true }).catch(() => notifyStorageIssue());
+    persistStats(updated);
     renderRanking();
 
     const toast = document.getElementById('toast');
@@ -1690,14 +1704,10 @@
   function scheduleRankingSave(){
     if(rankingSaveTimer) clearTimeout(rankingSaveTimer);
     rankingSaveTimer = setTimeout(async () => {
-      try{
-        await setDoc(statsRef, { players: statsMap }, { merge: true });
-        const toast = document.getElementById('toast');
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 1400);
-      } catch(err){
-        notifyStorageIssue();
-      }
+      await persistStats(statsMap);
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1400);
     }, 500);
   }
 
