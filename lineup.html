@@ -1611,10 +1611,12 @@
     const emptyState = document.getElementById('rankingEmptyState');
     if(!tbody || !emptyState) return;
 
-    const rows = allPlayerNamesForRanking().map(([key, name]) => {
-      const stat = statsMap[key] || { played: 0, points: 0 };
-      return { key, name, played: stat.played || 0, points: stat.points || 0 };
-    });
+    const rows = allPlayerNamesForRanking()
+      .map(([key, name]) => {
+        const stat = statsMap[key] || { played: 0, points: 0 };
+        return { key, name, played: stat.played || 0, points: stat.points || 0 };
+      })
+      .filter(r => r.played > 0);
     rows.sort((a, b) => b.points - a.points || b.played - a.played);
     lastRankingRows = rows;
 
