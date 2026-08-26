@@ -406,6 +406,19 @@
     min-width:22px;
     text-align:center;
   }
+  .move-team-btn{
+    flex:none;
+    width:26px; height:26px;
+    border:1px solid var(--line);
+    background: transparent;
+    color: var(--chalk-dim);
+    cursor:pointer;
+    font-size:14px;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:50%;
+    transition: all .15s ease;
+  }
+  .move-team-btn:hover{ background: rgba(200,137,44,0.15); color: var(--gold); border-color: var(--gold); }
 
   .waiting-list{
     display:flex;
@@ -667,6 +680,7 @@
   let skillMap = {}; // player index (string) -> skill ("1".."10")
   let statsMap = {}; // normalized name -> { played, points } (يبقى بالاسم لأنه يتراكم عبر أسابيع)
   let shuffleSeed = 1; // بذرة توزيع الفريقين، تتزامن بين الجهازين عبر Firestore
+  let teamOverride = {}; // player index -> 'A' | 'B' (نقل يدوي بين الفريقين، له أولوية على التوزيع التلقائي)
 
   let docLoaded = false;
   let resolveDocReady;
@@ -837,6 +851,7 @@
     const data = snap.exists() ? snap.data() : {};
     const remoteNames = data.names || '';
     shuffleSeed = data.shuffleSeed || 1;
+    teamOverride = data.teamOverrides || {};
     remoteRaw = {
       positions: { ...(data.positions || {}) },
       skills: { ...(data.skills || {}) },
@@ -1091,6 +1106,7 @@
     }
     positionMap = shiftMapAfterDelete(positionMap);
     skillMap = shiftMapAfterDelete(skillMap);
+    teamOverride = shiftMapAfterDelete(teamOverride);
 
     // تصحيح الاختيار الحالي بنفس الطريقة
     const newSelected = new Set();
@@ -1108,6 +1124,7 @@
       names: rawText,
       positions: positionMap,
       skills: skillMap,
+      teamOverrides: teamOverride,
       selected: [...selected]
     });
 
@@ -1188,6 +1205,7 @@
     const rng = seededRandom(shuffleSeed);
     const groups = { 'دفاع': [], 'وسط': [], 'جناح': [], other: [] };
     [...selected].forEach(i => {
+      if(teamOverride[i]) return; // منقول يدويًا، يُضاف لاحقًا مباشرة بفريقه المحدد
       const pos = positionMap[i];
       if(pos === 'دفاع' || pos === 'وسط' || pos === 'جناح'){ groups[pos].push(i); }
       else { groups.other.push(i); }
@@ -1219,7 +1237,22 @@
     assignList(groups['جناح']);
     assignList(groups.other);
 
+    // نضيف اللاعبين المنقولين يدويًا لفرقهم المحددة (لهم أولوية على التوزيع التلقائي)
+    [...selected].forEach(i => {
+      const ov = teamOverride[i];
+      if(!ov) return;
+      if(ov === 'A') teamA.push(i); else teamB.push(i);
+    });
+
     return { teamA, teamB };
+  }
+
+  // ينقل لاعب من فريقه الحالي للفريق الآخر يدويًا، وتنحفظ النقلة وتتزامن بين الجهازين
+  function moveToOtherTeam(i, currentTeamKey){
+    const target = currentTeamKey === 'A' ? 'B' : 'A';
+    teamOverride = { ...teamOverride, [i]: target };
+    persist({ teamOverrides: teamOverride });
+    updateResult();
   }
 
   function reshuffleTeams(){
@@ -1235,21 +1268,29 @@
       .filter(p => positionMap[p.i] === 'انتظار');
   }
 
-  function renderTeamList(el, list){
+  function renderTeamList(el, list, teamKey){
     el.innerHTML = list.map((i, idx) => {
       const pos = positionMap[i];
       const posTag = pos ? `<span class="pos-tag">${pos}</span>` : '';
       const skillVal = skillMap[i];
       const skillTag = skillVal ? `<span class="skill-tag">${toArabicNum(skillVal)}</span>` : '';
+      const otherTeamLabel = teamKey === 'A' ? 'الفريق الثاني' : 'الفريق الأول';
       return `
       <div class="final-item">
         <span class="num">${toArabicNum(idx+1)}</span>
         <span class="name-txt">${escapeHtml(players[i])}</span>
         ${posTag}
         ${skillTag}
+        <button type="button" class="move-team-btn" data-index="${i}" aria-label="انقل ${escapeHtml(players[i])} إلى ${otherTeamLabel}" title="نقل إلى ${otherTeamLabel}">⇄</button>
       </div>
     `;
     }).join('');
+
+    el.querySelectorAll('.move-team-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        moveToOtherTeam(Number(btn.dataset.index), teamKey);
+      });
+    });
   }
 
   function updateResult(){
@@ -1265,8 +1306,8 @@
     resultSection.style.display = 'block';
 
     const { teamA, teamB } = buildTeams();
-    renderTeamList(document.getElementById('finalListA'), teamA);
-    renderTeamList(document.getElementById('finalListB'), teamB);
+    renderTeamList(document.getElementById('finalListA'), teamA, 'A');
+    renderTeamList(document.getElementById('finalListB'), teamB, 'B');
 
     document.getElementById('avgA').textContent = teamA.length
       ? 'متوسط المهارة ' + toArabicNum((teamA.reduce((s,i)=>s+getSkill(players[i]),0)/teamA.length).toFixed(1))
@@ -1541,12 +1582,13 @@
   }
 
   function resetAll(){
-    // قائمة الأسماء تظل محفوظة، بس نصفّر اختيار هالأسبوع
+    // قائمة الأسماء تظل محفوظة، بس نصفّر اختيار هالأسبوع والتنقلات اليدوية
     selected.clear();
+    teamOverride = {};
     renderRows();
     updateScoreboard();
     updateResult();
-    persist({ selected: [] });
+    persist({ selected: [], teamOverrides: {} });
     const status = document.getElementById('winnerStatus');
     if(status) status.textContent = '';
     document.getElementById('listSection').scrollIntoView({behavior:'smooth', block:'start'});
