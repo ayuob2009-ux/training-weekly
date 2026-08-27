@@ -1204,8 +1204,9 @@
   function buildTeams(){
     const rng = seededRandom(shuffleSeed);
     const groups = { 'دفاع': [], 'وسط': [], 'جناح': [], other: [] };
+    // نحسب التوزيع الطبيعي بافتراض عدم وجود أي نقل يدوي، عشان ما يتأثر
+    // ترتيب بقية اللاعبين بمجرد استثناء لاعب منقول من الحساب
     [...selected].forEach(i => {
-      if(teamOverride[i]) return; // منقول يدويًا، يُضاف لاحقًا مباشرة بفريقه المحدد
       const pos = positionMap[i];
       if(pos === 'دفاع' || pos === 'وسط' || pos === 'جناح'){ groups[pos].push(i); }
       else { groups.other.push(i); }
@@ -1237,11 +1238,15 @@
     assignList(groups['جناح']);
     assignList(groups.other);
 
-    // نضيف اللاعبين المنقولين يدويًا لفرقهم المحددة (لهم أولوية على التوزيع التلقائي)
-    [...selected].forEach(i => {
-      const ov = teamOverride[i];
-      if(!ov) return;
-      if(ov === 'A') teamA.push(i); else teamB.push(i);
+    // الآن نطبّق النقلات اليدوية كتصحيح أخير بعد التوزيع الطبيعي الكامل،
+    // عشان تنقل لاعب وحد بس ينتقل هو، بدون ما يأثر على توزيع أي حد ثاني
+    Object.keys(teamOverride).forEach(key => {
+      const i = Number(key);
+      if(!selected.has(i)) return;
+      const target = teamOverride[key];
+      teamA = teamA.filter(x => x !== i);
+      teamB = teamB.filter(x => x !== i);
+      if(target === 'A') teamA.push(i); else teamB.push(i);
     });
 
     return { teamA, teamB };
