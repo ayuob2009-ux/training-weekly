@@ -1278,7 +1278,7 @@
 
     function teamSummary(list){
       if(list.length === 0) return '';
-      const total = list.reduce((s,i)=>s+getSkill(players[i]),0);
+      const total = list.reduce((s,i)=>s+getSkill(i),0);
       const avg = (total / list.length).toFixed(1);
       return `متوسط المهارة ${toArabicNum(avg)} · إجمالي ${toArabicNum(total)}`;
     }
