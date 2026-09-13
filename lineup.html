@@ -34,7 +34,6 @@
     color: var(--chalk);
     padding: 24px 16px 60px;
   }
-  /* خطوط ملعب خافتة: دائرة المنتصف وخط نصف الملعب */
   body::before{
     content:"";
     position:fixed;
@@ -48,7 +47,6 @@
     background-position: 50% 38%, 50% 38%;
     z-index:0;
   }
-  /* شريط مدرجات خافت أعلى الصفحة + كرة قدم زخرفية أسفل الصفحة */
   body::after{
     content:"";
     position:fixed;
@@ -481,7 +479,6 @@
     padding:20px 0;
   }
 
-  /* ===== أنماط خاصة بصفحة الترتيب (view-ranking) ===== */
   #view-ranking{ display:none; }
   table{
     width:100%;
@@ -654,7 +651,6 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import { getFirestore, doc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
-  // بيانات مشروعك في Firebase — مشتركة بينك وبين أخوك
   const firebaseConfig = {
     apiKey: "AIzaSyBcxBeY7pjJ5iEHB45-wJh6Pre0qSnZdVI",
     authDomain: "training-f7016.firebaseapp.com",
@@ -676,11 +672,11 @@
 
   let players = [];
   let selected = new Set();
-  let positionMap = {}; // player index (string) -> position
-  let skillMap = {}; // player index (string) -> skill ("1".."10")
-  let statsMap = {}; // normalized name -> { played, points } (يبقى بالاسم لأنه يتراكم عبر أسابيع)
-  let shuffleSeed = 1; // بذرة توزيع الفريقين، تتزامن بين الجهازين عبر Firestore
-  let teamOverride = {}; // player index -> 'A' | 'B' (نقل يدوي بين الفريقين، له أولوية على التوزيع التلقائي)
+  let positionMap = {};
+  let skillMap = {};
+  let statsMap = {};
+  let shuffleSeed = 1;
+  let teamOverride = {};
 
   let docLoaded = false;
   let resolveDocReady;
@@ -697,8 +693,6 @@
     const v = skillMap[i];
     return v ? Number(v) : 5;
   }
-  // مولّد أرقام عشوائية بذري بسيط، يعطي نفس النتيجة لنفس البذرة
-  // على أي جهاز، عشان توزيع الفريقين يطلع متطابق بعد المزامنة
   function seededRandom(seed){
     let s = seed | 0;
     return function(){
@@ -736,8 +730,6 @@
     selected = newSelected;
   }
 
-  // تحويل بيانات قديمة كانت محفوظة بالاسم (بدل الفهرس) لمرة واحدة فقط،
-  // موصوفة بعلامة formatVersion حتى ما تتكرر
   function migrateNameKeyedMap(oldMap){
     const result = {};
     players.forEach((name, i) => {
@@ -756,13 +748,10 @@
     return result;
   }
 
-  // نستخدم updateDoc عشان يستبدل قيمة الحقل بالكامل بدل ما يدمجها مع القديم
-  // (setDoc مع merge:true يدمج الخرائط المتداخلة، فلا يحذف مفاتيح انحذفت محليًا)
   async function persist(partial){
     try{
       await updateDoc(sharedRef, partial);
     } catch(err){
-      // أول مرة يُنشأ فيها المستند، updateDoc يفشل لأنه غير موجود بعد
       try{
         await setDoc(sharedRef, partial, { merge: true });
       } catch(err2){
@@ -771,7 +760,6 @@
     }
   }
 
-  // نفس فكرة persist بس لوثيقة الإحصائيات (تضمن حذف أي لاعب بشكل نهائي فعلي)
   async function persistStats(playersObj){
     try{
       await updateDoc(statsRef, { players: playersObj });
@@ -789,11 +777,9 @@
     if(pos === 'وسط') return 1;
     if(pos === 'جناح') return 2;
     if(pos === 'انتظار') return 4;
-    return 3; // بدون خانة محددة
+    return 3;
   }
 
-  // يعيد ترتيب صفوف اللاعبين بصريًا حسب الخانة: دفاع ثم وسط ثم جناح
-  // بدون إعادة بناء عناصر DOM (يحافظ على مستمعي الأحداث)
   function reorderRows(){
     const container = document.getElementById('rowsContainer');
     if(!container) return;
@@ -808,8 +794,6 @@
     rows.forEach(r => container.appendChild(r));
   }
 
-  // يحدّث أزرار الخانة وقائمة المهارة داخل الصفوف الموجودة بدون إعادة بنائها
-  // (عشان ما نفقد نفس عنصر DOM ومستمعي الأحداث)
   function syncRowControls(){
     document.querySelectorAll('.row').forEach(row => {
       const i = Number(row.dataset.index);
@@ -830,8 +814,6 @@
   let didMigrateFormat = false;
   let remoteRaw = { positions: {}, skills: {}, selected: [], formatVersion: 1 };
 
-  // يطبّق آخر بيانات وصلت من Firestore على الحالة المحلية، مع ترحيل
-  // البيانات القديمة (المحفوظة بالاسم) للتنسيق الجديد (بالفهرس) لو احتاج الأمر
   function applyRemoteState(){
     if(remoteRaw.formatVersion < 2 && !didMigrateFormat){
       didMigrateFormat = true;
@@ -922,7 +904,6 @@
 
     buildRowsDOM();
 
-    // طبّق الاختيار المشترك الحالي بعد ما الصفوف صارت جاهزة
     renderRows();
     syncRowControls();
     reorderRows();
@@ -932,8 +913,6 @@
     document.getElementById('listSection').scrollIntoView({behavior:'smooth', block:'start'});
   }
 
-  // يبني صفوف اللاعبين بالحاوية اعتمادًا على حالة players/positionMap/skillMap
-  // الحالية محليًا، بدون أي جلب أو مزامنة (يُستخدم بعد التوليد الأول وبعد الحذف)
   function buildRowsDOM(){
     const container = document.getElementById('rowsContainer');
     container.innerHTML = '';
@@ -1007,7 +986,6 @@
     });
   }
 
-  // يفتح حقل تعديل اسم اللاعب مكان النص، ويحفظ عند الضغط إنتر أو الخروج منه
   function startEditName(i, row){
     const nameDiv = row.querySelector('.name');
     if(!nameDiv) return;
@@ -1045,8 +1023,6 @@
     input.addEventListener('blur', () => finish(true));
   }
 
-  // يعدّل اسم لاعب مع الحفاظ على مركزه ومهارته (مرتبطين بترتيبه لا باسمه)،
-  // وينقل نقاط الترتيب المتراكمة من الاسم القديم للاسم الجديد
   function renamePlayer(i, newName){
     const oldName = players[i];
     players[i] = newName;
@@ -1080,7 +1056,6 @@
     renderRanking();
   }
 
-  // يسأل تأكيد قبل الحذف لأنه إجراء نهائي (اسم + مركز + مهارة)
   function confirmDeletePlayer(i){
     const name = players[i];
     if(!name) return;
@@ -1088,17 +1063,14 @@
     if(ok) deletePlayer(i);
   }
 
-  // يحذف لاعب بالكامل من القائمة، ويصحح فهارس كل من بعده تلقائيًا
-  // (عشان ما تصير نفس مشكلة تزحزح المراكز والمهارات)
   function deletePlayer(i){
     players.splice(i, 1);
 
-    // تصحيح المراكز والمهارات: من كان قبله يبقى كما هو، ومن كان بعده يرجع خانة للخلف
     function shiftMapAfterDelete(oldMap){
       const fixed = {};
       for(const key in oldMap){
         const idx = Number(key);
-        if(idx === i) continue; // نحذف بيانات اللاعب المحذوف نفسه
+        if(idx === i) continue;
         if(idx < i){ fixed[idx] = oldMap[key]; }
         else { fixed[idx - 1] = oldMap[key]; }
       }
@@ -1108,7 +1080,6 @@
     skillMap = shiftMapAfterDelete(skillMap);
     teamOverride = shiftMapAfterDelete(teamOverride);
 
-    // تصحيح الاختيار الحالي بنفس الطريقة
     const newSelected = new Set();
     selected.forEach(idx => {
       if(idx === i) return;
@@ -1199,21 +1170,15 @@
     board.classList.toggle('full', selected.size === MAX);
   }
 
-  // يوزع اللاعبين على فريقين بالتناوب (سنيك درافت) حسب المهارة، ويحافظ قدر
-  // الإمكان على ٣ دفاع + ٢ وسط + ٣ جناح بكل فريق
   function buildTeams(){
     const rng = seededRandom(shuffleSeed);
     const groups = { 'دفاع': [], 'وسط': [], 'جناح': [], other: [] };
-    // نحسب التوزيع الطبيعي بافتراض عدم وجود أي نقل يدوي، عشان ما يتأثر
-    // ترتيب بقية اللاعبين بمجرد استثناء لاعب منقول من الحساب
     [...selected].forEach(i => {
       const pos = positionMap[i];
       if(pos === 'دفاع' || pos === 'وسط' || pos === 'جناح'){ groups[pos].push(i); }
       else { groups.other.push(i); }
     });
     ['دفاع', 'وسط', 'جناح', 'other'].forEach(k => {
-      // خلط عشوائي (بذرة موحّدة بين الجهازين) قبل الترتيب حسب المهارة،
-      // عشان التعادل بين لاعبين بنفس المهارة يصير عشوائي مو ثابت دايمًا
       for(let idx = groups[k].length - 1; idx > 0; idx--){
         const j = Math.floor(rng() * (idx + 1));
         [groups[k][idx], groups[k][j]] = [groups[k][j], groups[k][idx]];
@@ -1238,8 +1203,6 @@
     assignList(groups['جناح']);
     assignList(groups.other);
 
-    // الآن نطبّق النقلات اليدوية كتصحيح أخير بعد التوزيع الطبيعي الكامل،
-    // عشان تنقل لاعب وحد بس ينتقل هو، بدون ما يأثر على توزيع أي حد ثاني
     Object.keys(teamOverride).forEach(key => {
       const i = Number(key);
       if(!selected.has(i)) return;
@@ -1252,7 +1215,6 @@
     return { teamA, teamB };
   }
 
-  // ينقل لاعب من فريقه الحالي للفريق الآخر يدويًا، وتنحفظ النقلة وتتزامن بين الجهازين
   function moveToOtherTeam(i, currentTeamKey){
     const target = currentTeamKey === 'A' ? 'B' : 'A';
     teamOverride = { ...teamOverride, [i]: target };
@@ -1314,12 +1276,15 @@
     renderTeamList(document.getElementById('finalListA'), teamA, 'A');
     renderTeamList(document.getElementById('finalListB'), teamB, 'B');
 
-    document.getElementById('avgA').textContent = teamA.length
-      ? 'متوسط المهارة ' + toArabicNum((teamA.reduce((s,i)=>s+getSkill(players[i]),0)/teamA.length).toFixed(1))
-      : '';
-    document.getElementById('avgB').textContent = teamB.length
-      ? 'متوسط المهارة ' + toArabicNum((teamB.reduce((s,i)=>s+getSkill(players[i]),0)/teamB.length).toFixed(1))
-      : '';
+    function teamSummary(list){
+      if(list.length === 0) return '';
+      const total = list.reduce((s,i)=>s+getSkill(players[i]),0);
+      const avg = (total / list.length).toFixed(1);
+      return `متوسط المهارة ${toArabicNum(avg)} · إجمالي ${toArabicNum(total)}`;
+    }
+
+    document.getElementById('avgA').textContent = teamSummary(teamA);
+    document.getElementById('avgB').textContent = teamSummary(teamB);
 
     if(waiting.length > 0){
       waitingList.style.display = 'block';
@@ -1361,12 +1326,6 @@
     ctx.closePath();
   }
 
-  // يرسم قميص لاعب مبسط مع اسمه تحته
-  function lerp(a, b, t){ return a + (b - a) * t; }
-
-  // يرسم قميص لاعب مع اسمه تحته، fillColor لون القميص وoutline لون الحدود
-  // يرسم قميص بسيط بدون رقم (خيار المستخدم: بدون رقم على القميص)
-  // أيقونة قميص صغيرة بجنب اسم اللاعب بالقائمة (أسلوب بطاقة التشكيلات)
   function drawSmallJersey(ctx, cx, cy, fillColor, outlineColor){
     ctx.save();
     ctx.translate(cx, cy);
@@ -1392,7 +1351,6 @@
     ctx.restore();
   }
 
-  // كرة قدم صغيرة زخرفية (أصلية، بدون أي علامة تجارية)
   function drawSmallBall(ctx, cx, cy, r){
     ctx.save();
     ctx.translate(cx, cy);
@@ -1416,7 +1374,6 @@
     ctx.restore();
   }
 
-  // يرسم قائمة لاعبي فريق واحد داخل بطاقة داكنة بحدود ذهبية
   function drawTeamListPanel(ctx, x, y, w, h, teamLabel, badgeNumber, list, jerseyFill, jerseyOutline, alignRight){
     roundRect(ctx, x, y, w, h, 14);
     ctx.fillStyle = 'rgba(15,28,48,0.92)';
@@ -1495,7 +1452,7 @@
         document.fonts.load('700 16px Tajawal'),
         document.fonts.load('600 14px Tajawal')
       ]);
-    } catch(e){ /* تجاهل، بيرسم بالخط الاحتياطي لو صار خلل */ }
+    } catch(e){}
 
     const scale = 2;
     const width = 1000;
@@ -1507,7 +1464,6 @@
     const ctx = canvas.getContext('2d');
     ctx.scale(scale, scale);
 
-    // خلفية داكنة بتدرّج كحلي مع توهج كشافات بالزوايا (بديل أصلي عن صورة الاستاد)
     const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
     bgGrad.addColorStop(0, '#16273f');
     bgGrad.addColorStop(1, '#0a1526');
@@ -1526,7 +1482,6 @@
     ctx.fillStyle = glowTR;
     ctx.fillRect(width * 0.5, 0, width * 0.5, 260);
 
-    // بانر العنوان بالمنتصف
     const bannerW = 440, bannerH = 118, bannerX = width / 2 - bannerW / 2, bannerY = 44;
     roundRect(ctx, bannerX, bannerY, bannerW, bannerH, 14);
     ctx.fillStyle = 'rgba(15,28,48,0.92)';
@@ -1551,7 +1506,6 @@
     ctx.font = '600 12px Tajawal, sans-serif';
     ctx.fillText('M A T C H   L I N E U P S', width / 2, bannerY + 98);
 
-    // لوحتا الفريقين
     const panelTop = bannerY + bannerH + 26;
     const panelH = height - panelTop - 56;
     const panelW = 330;
@@ -1564,7 +1518,6 @@
     drawTeamListPanel(ctx, rightX, panelTop, panelW, panelH, 'الفريق الأول', 1, namesA, '#faf5e6', '#12233d', true);
     drawTeamListPanel(ctx, leftX, panelTop, panelW, panelH, 'الفريق الثاني', 2, namesB, '#7ec1e8', '#12233d', false);
 
-    // اسم الملعب أسفل الصورة
     ctx.fillStyle = '#faf5e6';
     ctx.font = '700 16px Tajawal, sans-serif';
     ctx.textAlign = 'center';
@@ -1587,7 +1540,6 @@
   }
 
   function resetAll(){
-    // قائمة الأسماء تظل محفوظة، بس نصفّر اختيار هالأسبوع والتنقلات اليدوية
     selected.clear();
     teamOverride = {};
     renderRows();
@@ -1647,7 +1599,6 @@
     return div.innerHTML;
   }
 
-  // ===== منطق تبويب الترتيب (view-ranking) — يستخدم نفس players وstatsMap =====
   let lastRankingRows = [];
   let rankingSaveTimer = null;
 
@@ -1661,8 +1612,6 @@
   }
 
   function allPlayerNamesForRanking(){
-    // يعرض بس اللاعبين اللي فعليًا سجّلنا لهم نتيجة (موجودين برصيد Firestore)،
-    // مو كل اللي بقائمة الأسماء — عشان لو حذفت لاعب من الترتيب ما يرجع تلقائيًا
     const nameByKey = new Map(players.map(n => [normalize(n), n]));
     return Object.keys(statsMap).map(key => [key, nameByKey.get(key) || key]);
   }
@@ -1721,7 +1670,6 @@
     });
   }
 
-  // يسأل تأكيد قبل حذف صف لاعب من جدول الترتيب (يمسح رصيد لعب/نقاط نهائيًا)
   function confirmDeleteRankingEntry(key, name){
     const ok = window.confirm(`متأكد تبي تحذف "${name}" من جدول الترتيب؟ بيمسح رصيده (لعب/نقاط) نهائيًا.`);
     if(ok) deleteRankingEntry(key);
@@ -1758,7 +1706,6 @@
     }, 500);
   }
 
-  // يرسم أفضل ٢٠ لاعب على كانفاس وينزّله كصورة PNG
   async function saveRankingAsImage(){
     const rows = lastRankingRows.slice(0, 20);
     if(rows.length === 0){
@@ -1777,7 +1724,7 @@
         document.fonts.load('900 12.5px Cairo'),
         document.fonts.load('600 16px Tajawal')
       ]);
-    } catch(e){ /* تجاهل، بيرسم بالخط الاحتياطي لو صار خلل */ }
+    } catch(e){}
 
     const scale = 2;
     const margin = 24;
